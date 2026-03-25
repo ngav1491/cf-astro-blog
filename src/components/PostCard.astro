@@ -1,0 +1,79 @@
+---
+import "@/styles/post-card.css";
+import { formatDate } from "@/lib/format";
+import { siteConfig } from "@/lib/types";
+
+interface Props {
+	title: string;
+	slug: string;
+	excerpt?: string | null;
+	publishedAt?: string | null;
+	categoryName?: string | null;
+	authorName?: string | null;
+	featuredImageKey?: string | null;
+	featuredImageAlt?: string | null;
+	coverSide?: "left" | "right";
+}
+
+const {
+	title,
+	slug,
+	excerpt,
+	publishedAt,
+	categoryName,
+	authorName,
+	featuredImageKey,
+	featuredImageAlt,
+	coverSide = "left",
+} = Astro.props;
+
+const formattedDate = publishedAt ? formatDate(publishedAt) : null;
+const coverImageUrl = featuredImageKey ? `/media/${featuredImageKey}` : null;
+const coverImageAlt = featuredImageAlt?.trim() || `Ảnh bìa của ${title}`;
+const hasCover = Boolean(coverImageUrl);
+const cardClassName = [
+	"post-card",
+	"glass-panel",
+	hasCover
+		? coverSide === "right"
+			? "post-card-cover-right"
+			: "post-card-cover-left"
+		: "post-card-no-cover",
+].join(" ");
+---
+
+<article class={cardClassName}>
+	{hasCover && (
+		<a href={`/blog/${slug}`} class="post-card-cover">
+			<img src={coverImageUrl} alt={coverImageAlt} loading="lazy" decoding="async" />
+		</a>
+	)}
+	<div class="post-card-content">
+		<div class="post-card-top">
+			<div class="pill-row" transition:name={`meta-${slug}`}>
+				{formattedDate && (
+					<time
+						class="pill local-time-pending"
+						datetime={publishedAt ?? undefined}
+						data-local-time="date"
+					>
+						{formattedDate}
+					</time>
+				)}
+				{categoryName && <span class="pill">{categoryName}</span>}
+			</div>
+			<a href={`/blog/${slug}`} class="post-card-link">
+				<h2 class="post-card-title" transition:name={`title-${slug}`}>{title}</h2>
+			</a>
+		</div>
+		{excerpt && (
+			<p class="post-card-excerpt" transition:name={`summary-${slug}`}>
+				{excerpt}
+			</p>
+		)}
+		<div class="post-card-meta">
+			<span>{authorName || siteConfig.author}</span>
+			<a href={`/blog/${slug}`} class="post-card-readmore">Đọc tiếp</a>
+		</div>
+	</div>
+</article>

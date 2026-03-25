@@ -1,0 +1,172 @@
+---
+import { env } from "cloudflare:workers";
+import Base from "@/layouts/Base.astro";
+
+const applyStatus = Astro.url.searchParams.get("apply") || "";
+const turnstileSiteKey = String(env.TURNSTILE_SITE_KEY || "").trim();
+const turnstileEnabled = turnstileSiteKey.length > 0;
+
+function getApplyMessage(status: string) {
+	switch (status) {
+		case "success":
+			return {
+				type: "success",
+				text: "Đã gửi đăng ký, sau khi kiểm duyệt sẽ hiển thị trong danh sách liên kết bạn bè.",
+			};
+		case "duplicate":
+			return {
+				type: "error",
+				text: "Trang web này đã có đơn đăng ký hoặc đã trong danh sách liên kết bạn bè, vui lòng không gửi trùng lặp.",
+			};
+		case "invalid":
+			return {
+				type: "error",
+				text: "Thông tin đăng ký không đầy đủ hoặc định dạng không hợp lệ, vui lòng kiểm tra và thử lại.",
+			};
+		case "challenge-failed":
+			return {
+				type: "error",
+				text: "Xác minh con người không thành công, vui lòng hoàn tất xác minh rồi thử lại.",
+			};
+		default:
+			return null;
+	}
+}
+
+const applyMessage = getApplyMessage(applyStatus);
+---
+
+<Base title="Đăng ký liên kết bạn bè" description="Gửi đăng ký liên kết bạn bè, sau khi kiểm duyệt sẽ hiển thị trong danh sách liên kết bạn bè.">
+	<section class="friends-apply-hero glass-panel">
+		<span class="section-kicker">Liên kết bạn bè</span>
+		<h1 class="page-title">Đăng ký liên kết bạn bè</h1>
+		<p class="page-intro">Điền thông tin trang web rồi gửi, mặc định sẽ vào trạng thái chờ kiểm duyệt. Sau khi được duyệt sẽ xuất hiện trong danh sách.</p>
+		<a href="/friends" class="button button-secondary">Quay về danh sách liên kết bạn bè</a>
+	</section>
+
+	<section class="friends-apply-box glass-panel">
+		{applyMessage ? (
+			<div class:list={["alert", applyMessage.type === "success" ? "alert-success" : "alert-error"]}>
+				{applyMessage.text}
+			</div>
+		) : null}
+
+		<form method="post" action="/api/friend-links/apply" class="friends-apply-form">
+			<label>
+				<span>Tên trang web</span>
+				<input type="text" name="name" maxlength="80" required />
+			</label>
+			<label>
+				<span>URL trang web</span>
+				<input type="url" name="siteUrl" maxlength="240" placeholder="https://example.com" required />
+			</label>
+			<label>
+				<span>URL avatar (tùy chọn)</span>
+				<input type="url" name="avatarUrl" maxlength="240" placeholder="https://example.com/avatar.png" />
+			</label>
+			<label>
+				<span>Giới thiệu trang web (tùy chọn)</span>
+				<textarea name="description" rows="3" maxlength="320"></textarea>
+			</label>
+			<label>
+				<span>Liên hệ</span>
+				<input type="text" name="contact" maxlength="120" placeholder="Email / Tài khoản mạng xã hội" required />
+			</label>
+			<label>
+				<span>Ghi chú (tùy chọn)</span>
+				<textarea name="note" rows="2" maxlength="320"></textarea>
+			</label>
+			{turnstileEnabled ? (
+				<div class="turnstile-row">
+					<div
+						class="cf-turnstile"
+						data-sitekey={turnstileSiteKey}
+						data-theme="auto"
+						data-action="friend_link_apply"
+					></div>
+				</div>
+			) : (
+				<p class="turnstile-hint">Hiện chưa cấu hình Turnstile Site Key, vui lòng bổ sung trong biến môi trường trước khi công khai.</p>
+			)}
+			<button type="submit" class="button">Gửi đăng ký</button>
+		</form>
+	</section>
+
+	{turnstileEnabled ? (
+		<script
+			is:inline
+			src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+			async
+			defer
+		></script>
+	) : null}
+</Base>
+
+<style>
+	.friends-apply-hero,
+	.friends-apply-box {
+		--glass-panel-opacity: calc(var(--hero-card-opacity, 14) / 100);
+		--glass-panel-blur: var(--hero-card-blur, 18px);
+		display: grid;
+		gap: 1rem;
+		padding: clamp(1.3rem, 1rem + 1.6vw, 2.1rem);
+	}
+
+	.friends-apply-form {
+		display: grid;
+		gap: 0.75rem;
+	}
+
+	.friends-apply-form label {
+		display: grid;
+		gap: 0.4rem;
+	}
+
+	.friends-apply-form span {
+		font-size: 0.87rem;
+		color: var(--color-text-muted);
+	}
+
+	.friends-apply-form input,
+	.friends-apply-form textarea {
+		width: 100%;
+		padding: 0.78rem 0.9rem;
+		border-radius: var(--radius-inner);
+		border: 1px solid rgba(255, 255, 255, 0.14);
+		background: rgba(255, 255, 255, 0.06);
+		color: var(--color-text);
+	}
+
+	.friends-apply-form textarea {
+		resize: vertical;
+	}
+
+	.alert {
+		padding: 0.75rem 0.85rem;
+		border-radius: var(--radius-inner);
+		font-size: 0.86rem;
+	}
+
+	.alert-success {
+		background: rgba(22, 163, 74, 0.14);
+		border: 1px solid rgba(22, 163, 74, 0.22);
+		color: #5be08b;
+	}
+
+	.alert-error {
+		background: rgba(239, 68, 68, 0.14);
+		border: 1px solid rgba(239, 68, 68, 0.22);
+		color: #ff8d8d;
+	}
+
+	.turnstile-row {
+		display: flex;
+		justify-content: flex-start;
+	}
+
+	.turnstile-hint {
+		margin: 0;
+		font-size: 0.84rem;
+		color: var(--color-text-muted);
+	}
+</style>

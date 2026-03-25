@@ -1,0 +1,559 @@
+---
+import CommentsPanel from "@/components/CommentsPanel.astro";
+import { formatDate } from "@/lib/format";
+import type { MarkdownTocItem } from "@/lib/security";
+import Base from "./Base.astro";
+
+interface Props {
+	slug: string;
+	title: string;
+	description?: string;
+	image?: string;
+	canonicalUrl?: string;
+	publishedAt?: string;
+	authorName?: string;
+	categoryName?: string;
+	articleSidebarAvatarPath?: string;
+	articleSidebarName?: string;
+	articleSidebarBadge?: string;
+	articleSidebarBio?: string;
+	toc?: MarkdownTocItem[];
+}
+
+const {
+	slug,
+	title,
+	description,
+	image,
+	canonicalUrl,
+	publishedAt,
+	authorName,
+	categoryName,
+	articleSidebarAvatarPath,
+	articleSidebarName,
+	articleSidebarBadge,
+	articleSidebarBio,
+	toc,
+} = Astro.props;
+
+const formattedDate = publishedAt ? formatDate(publishedAt) : null;
+const sidebarName = articleSidebarName?.trim() || authorName?.trim() || "Người viết";
+const sidebarBadge = articleSidebarBadge?.trim() || "Tác giả bài viết";
+const sidebarBio = articleSidebarBio?.trim() || "Ghi chép về công nghệ, cuộc sống và những thử nghiệm ở đây.";
+const sidebarAvatarInitial = sidebarName.slice(0, 1).toUpperCase();
+const tocEntries = (toc ?? [])
+	.map((item) => ({
+		...item,
+		level:
+			Number.isInteger(item.level) && item.level >= 2 && item.level <= 4
+				? item.level
+				: 2,
+		text: item.text.trim(),
+	}))
+	.filter((item) => item.id && item.text);
+const hasToc = tocEntries.length > 0;
+---
+
+<Base title={title} description={description} image={image} canonicalUrl={canonicalUrl}>
+	<article class="article-shell">
+		<aside class:list={["article-sidebar", { "article-sidebar-with-toc": hasToc }]}>
+			<section class="article-profile glass-panel">
+				<div class="article-profile-avatar-frame">
+					{articleSidebarAvatarPath ? (
+				{articleSidebarAvatarPath ? (
+					<img
+						src={articleSidebarAvatarPath}
+						alt={`Avatar của ${sidebarName}`}
+						class="article-profile-avatar"
+						loading="lazy"
+						decoding="async"
+					/>
+				) : (
+							{sidebarAvatarInitial}
+						</span>
+					)}
+				</div>
+				<span class="article-profile-badge">{sidebarBadge}</span>
+				<strong class="article-profile-name">{sidebarName}</strong>
+				<p class="article-profile-bio">{sidebarBio}</p>
+				<div class="article-profile-meta">
+				<div class="article-profile-meta">
+				{formattedDate && (
+					<div class="article-profile-item">
+						<span>Ngày đăng</span>
+						<strong>
+							<time
+								class="local-time-pending"
+								datetime={publishedAt}
+								data-local-time="date"
+							>
+								{formattedDate}
+							</time>
+						</strong>
+					</div>
+				)}
+				{categoryName && (
+					<div class="article-profile-item">
+						<span>Phân loại bài viết</span>
+						<strong>{categoryName}</strong>
+					</div>
+				)}
+			</div>
+				{hasToc && (
+			{hasToc && (
+				<nav class="article-toc glass-panel" aria-label="Mục lục bài viết">
+					<div class="article-toc-head">
+						<span>Mục lục</span>
+						<button
+							type="button"
+							class="article-transparency-toggle article-transparency-toggle-compact"
+							data-article-transparency-toggle="true"
+							aria-pressed="false"
+						>
+							Bỏ độ trong suốt
+						</button>
+					</div>
+						<ol class="article-toc-list">
+							{tocEntries.map((item) => (
+								<li class={`article-toc-item level-${item.level}`}>
+									<a href={`#${item.id}`} class="article-toc-link" data-toc-id={item.id}>
+										{item.text}
+									</a>
+								</li>
+							))}
+						</ol>
+					</div>
+				</nav>
+			)}
+		</aside>
+		<div class="article-main">
+			<header class="article-hero glass-panel">
+				<div class="article-hero-tools">
+					<a href="/blog" class="article-back">Quay về lưu trữ</a>
+					<button
+						type="button"
+						class="article-transparency-toggle"
+						data-article-transparency-toggle="true"
+						aria-pressed="false"
+					>
+						Bỏ độ trong suốt
+					</button>
+				</div>
+				<div class="article-kicker">Bài viết chọn lọc</div>
+				<h1 class="article-title" transition:name={`title-${slug}`}>{title}</h1>
+				{description && (
+					<p class="article-summary" transition:name={`summary-${slug}`}>
+						{description}
+					</p>
+				)}
+				<div class="pill-row" transition:name={`meta-${slug}`}>
+					{formattedDate && (
+						<time
+							class="pill local-time-pending"
+							datetime={publishedAt}
+							data-local-time="date"
+						>
+							{formattedDate}
+						</time>
+					)}
+					{authorName && <span class="pill">{authorName}</span>}
+					{categoryName && <span class="pill">{categoryName}</span>}
+				</div>
+			</header>
+				<div class="article-body glass-panel">
+					<div class="prose article-prose">
+						<slot />
+					</div>
+				</div>
+				<div class="article-comments-card glass-panel">
+					<CommentsPanel />
+				</div>
+			</div>
+		</article>
+	<script is:inline src="/article-transparency-toggle.js"></script>
+	<script is:inline src="/article-sidebar-sticky.js"></script>
+	<script is:inline src="/article-toc-highlight.js"></script>
+</Base>
+
+<style>
+	.article-shell {
+		display: grid;
+		grid-template-columns: minmax(13.5rem, 17rem) minmax(0, 1fr);
+		gap: var(--space-xl);
+		align-items: start;
+	}
+
+	.article-main {
+		display: grid;
+		gap: var(--space-xl);
+	}
+
+	.article-sidebar {
+		--article-sidebar-sticky-top: 6.5rem;
+		--article-sidebar-gap: 0.8rem;
+		--article-profile-height: 0px;
+		--article-profile-shift: 0px;
+		align-self: stretch;
+		display: grid;
+		align-content: start;
+		grid-auto-rows: max-content;
+		gap: 0.8rem;
+	}
+
+	.article-profile {
+		display: grid;
+		gap: 0.8rem;
+		padding: 1.05rem;
+	}
+
+	.article-sidebar-with-toc .article-profile {
+		position: sticky;
+		top: calc(
+			var(--article-sidebar-sticky-top) -
+			var(--article-profile-height) -
+			var(--article-sidebar-gap)
+		);
+		transform: translateY(var(--article-profile-shift));
+	}
+
+	.article-profile-avatar-frame {
+		width: 100%;
+		aspect-ratio: 1 / 1;
+		border-radius: calc(var(--radius-inner) - 2px);
+		overflow: hidden;
+		background:
+			linear-gradient(145deg, rgba(10, 132, 255, 0.22), rgba(10, 132, 255, 0.06)),
+			rgba(255, 255, 255, 0.06);
+		border: 1px solid rgba(255, 255, 255, 0.16);
+		display: grid;
+		place-items: center;
+	}
+
+	.article-profile-avatar {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		object-position: center;
+	}
+
+	.article-profile-avatar-fallback {
+		font-size: clamp(2.2rem, 1.7rem + 1.8vw, 3rem);
+		font-weight: 700;
+		letter-spacing: 0.02em;
+		color: var(--color-accent-hover);
+	}
+
+	.article-profile-badge {
+		width: fit-content;
+		padding: 0.34rem 0.68rem;
+		border-radius: var(--radius-pill);
+		background: rgba(10, 132, 255, 0.12);
+		border: 1px solid rgba(10, 132, 255, 0.2);
+		font-size: 0.74rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-accent-hover);
+	}
+
+	.article-profile-name {
+		font-size: 1.1rem;
+		line-height: 1.3;
+		color: var(--color-text);
+	}
+
+	.article-profile-bio {
+		font-size: 0.92rem;
+		line-height: 1.7;
+		color: var(--color-text-secondary);
+	}
+
+	.article-profile-meta {
+		display: grid;
+		gap: 0.55rem;
+	}
+
+	.article-profile-item {
+		display: grid;
+		gap: 0.2rem;
+		padding: 0.58rem 0.66rem;
+		border-radius: calc(var(--radius-inner) - 10px);
+		background: rgba(255, 255, 255, 0.06);
+		border: 1px solid rgba(255, 255, 255, 0.12);
+	}
+
+	.article-profile-item span {
+		font-size: 0.74rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--color-text-muted);
+	}
+
+	.article-profile-item strong {
+		font-size: 0.9rem;
+		font-weight: 650;
+		color: var(--color-text);
+	}
+
+	.article-toc {
+		display: flex;
+		flex-direction: column;
+		gap: 0;
+		padding: 1rem;
+		position: sticky;
+		top: var(--article-sidebar-sticky-top);
+		/* 固定后容器从导航栏下方延伸至屏幕底部，减去 sticky top 和底部留白 */
+		max-height: calc(100vh - var(--article-sidebar-sticky-top) - 1.2rem);
+	}
+
+	.article-toc-head {
+		flex: 0 0 auto;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.6rem;
+		padding-bottom: 0.7rem;
+	}
+
+	.article-toc-body {
+		/* flex 子元素必须 min-height: 0 才能收缩触发 overflow-y 滚动 */
+		flex: 1 1 auto;
+		min-height: 0;
+		overflow-y: auto;
+		overflow-x: hidden;
+		/* 细滚动条 */
+		scrollbar-width: thin;
+		scrollbar-color: rgba(10, 132, 255, 0.3) transparent;
+		padding-bottom: 0.25rem;
+	}
+
+	.article-toc-head > span {
+		display: block;
+		font-size: 0.78rem;
+		line-height: 1.5;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		font-weight: 700;
+		font-family: var(--font-strong);
+		color: var(--color-text-muted);
+	}
+
+	.article-transparency-toggle-compact {
+		padding: 0.38rem 0.62rem;
+		font-size: 0.76rem;
+		line-height: 1.1;
+		white-space: nowrap;
+	}
+
+	.article-toc-list {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		display: grid;
+		gap: 0.28rem;
+	}
+
+	.article-toc-item {
+		margin: 0;
+	}
+
+	.article-toc-item.level-3 {
+		padding-left: 0.75rem;
+	}
+
+	.article-toc-item.level-4 {
+		padding-left: 1.35rem;
+	}
+
+	.article-toc-link {
+		display: block;
+		padding: 0.3rem 0.5rem;
+		border-left: 2px solid transparent;
+		border-radius: 0.3rem;
+		font-size: 0.875rem;
+		line-height: 1.5;
+		font-family: var(--font-strong);
+		font-weight: 450;
+		color: var(--color-text);
+		transition:
+			color var(--duration-normal) ease,
+			background-color var(--duration-normal) ease,
+			border-color var(--duration-normal) ease;
+	}
+
+	/* hover：仅颜色变化，不填充背景，避免与 .active 视觉混淆 */
+	.article-toc-link:hover {
+		color: var(--color-accent);
+		border-left-color: var(--color-accent);
+	}
+
+	/* 当前阅读章节高亮（由 article-toc-highlight.js 动态添加 .active 类） */
+	.article-toc-link.active {
+		color: var(--color-accent);
+		border-left-color: var(--color-accent);
+		background: var(--color-accent-soft);
+		font-weight: 550;
+	}
+
+	/*
+	 * slot 内容由父组件注入，子代选择器在 Astro scoped CSS 中仍会附加 [data-astro-cid]
+	 * 必须将整个选择器包在 :global() 内才能匹配 slot 插入的标题元素
+	 */
+	:global(.article-prose :is(h1, h2, h3, h4, h5, h6)[id]) {
+		scroll-margin-top: 6.5rem;
+	}
+
+	.article-hero,
+	.article-body {
+		padding: clamp(1.4rem, 1rem + 2vw, 2.5rem);
+	}
+
+	.article-hero {
+		display: grid;
+		gap: 1rem;
+	}
+
+	.article-hero-tools {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.55rem;
+	}
+
+	.article-back,
+	.article-transparency-toggle {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: fit-content;
+		padding: 0.58rem 0.92rem;
+		border-radius: var(--radius-pill);
+		background: rgba(255, 255, 255, 0.08);
+		border: 1px solid rgba(255, 255, 255, 0.12);
+		color: var(--color-text-secondary);
+		font-size: 0.88rem;
+		backdrop-filter: blur(10px) saturate(120%);
+		-webkit-backdrop-filter: blur(10px) saturate(120%);
+	}
+
+	.article-transparency-toggle {
+		cursor: pointer;
+		font-family: inherit;
+	}
+
+	.article-transparency-toggle:hover,
+	.article-transparency-toggle:focus-visible,
+	.article-back:hover,
+	.article-back:focus-visible {
+		border-color: rgba(135, 190, 255, 0.42);
+		background: rgba(255, 255, 255, 0.12);
+		color: var(--color-text);
+		outline: none;
+	}
+
+	:global(html.article-opaque-mode) .article-shell .glass-panel {
+		background: rgba(var(--card-surface-rgb), 0.96);
+		border-color: rgba(255, 255, 255, 0.14);
+		box-shadow: 0 14px 34px -28px rgba(8, 18, 34, 0.52);
+	}
+
+	:global(html.article-opaque-mode) .article-shell .glass-panel::after {
+		background: rgba(var(--card-surface-rgb), 0.98);
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+	}
+
+	:global(html.article-opaque-mode) .article-shell .glass-panel::before {
+		opacity: 0.22;
+	}
+
+	:global(html.article-opaque-mode) .article-shell .article-back,
+	:global(html.article-opaque-mode) .article-shell .article-transparency-toggle {
+		background: rgba(var(--card-surface-rgb), 0.94);
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+		border-color: rgba(255, 255, 255, 0.16);
+		color: var(--color-text);
+	}
+
+	.article-kicker {
+		font-size: 0.82rem;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--color-accent);
+	}
+
+	.article-title {
+		font-size: clamp(2.4rem, 1.8rem + 2vw, 4.4rem);
+		line-height: 1.02;
+		letter-spacing: -0.05em;
+	}
+
+	.article-summary {
+		max-width: 42rem;
+		font-size: 1.04rem;
+		line-height: 1.9;
+		color: var(--color-text-secondary);
+	}
+
+	.article-body {
+		margin-inline: auto;
+		width: 100%;
+	}
+
+	.article-prose {
+		margin-inline: auto;
+	}
+
+	/* 评论卡片内 CommentsPanel 融入外层 glass-panel，去掉自带的边框、背景和圆角 */
+	:global(.article-comments-card .comments-panel) {
+		border: none;
+		background: transparent;
+		border-radius: 0;
+		overflow: visible;
+	}
+	:global(html.article-opaque-mode .article-comments-card .comments-panel) {
+		background: transparent;
+	}
+
+	@media (max-width: 1024px) {
+		.article-shell {
+			grid-template-columns: 1fr;
+		}
+
+		.article-sidebar {
+			align-self: start;
+			position: static;
+			top: auto;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+
+		.article-profile {
+			position: static;
+			top: auto;
+		}
+
+		.article-toc {
+			position: static;
+			top: auto;
+			max-height: none;
+		}
+
+		.article-toc-body {
+			overflow-y: visible;
+		}
+
+		.article-profile-avatar-frame {
+			width: min(12rem, 100%);
+		}
+	}
+
+	@media (max-width: 900px), (orientation: portrait) and (max-width: 1180px) {
+		.article-shell {
+			grid-template-columns: 1fr;
+		}
+
+		.article-sidebar {
+			display: none;
+		}
+	}
+</style>

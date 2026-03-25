@@ -1,0 +1,261 @@
+---
+import { env } from "cloudflare:workers";
+import { asc, eq } from "drizzle-orm";
+import { friendLinks } from "@/db/schema";
+import Base from "@/layouts/Base.astro";
+import { getDb } from "@/lib/db";
+
+let approvedLinks: Array<{
+	id: number;
+	name: string;
+	siteUrl: string;
+	avatarUrl: string | null;
+	avatarProxyUrl?: string | null;
+	description: string;
+	contact: string;
+}> = [];
+
+function buildFriendAvatarProxyUrl(url: string | null): string | null {
+	if (!url) {
+		return null;
+	}
+
+	return `/api/friend-links/avatar?url=${encodeURIComponent(url)}`;
+}
+
+try {
+	const db = getDb(env.DB);
+
+	approvedLinks = await db
+		.select({
+			id: friendLinks.id,
+			name: friendLinks.name,
+			siteUrl: friendLinks.siteUrl,
+			avatarUrl: friendLinks.avatarUrl,
+			description: friendLinks.description,
+			contact: friendLinks.contact,
+		})
+		.from(friendLinks)
+		.where(eq(friendLinks.status, "approved"))
+		.orderBy(asc(friendLinks.name));
+	approvedLinks = approvedLinks.map((item) => ({
+		...item,
+		avatarProxyUrl: buildFriendAvatarProxyUrl(item.avatarUrl),
+	}));
+} catch {
+	// Khi D1 không bind, quay về danh sách trống
+}
+---
+
+<Base title="Liên kết bạn bè" description="Hiển thị các liên kết bạn bè đã được kiểm duyệt. Để đăng ký liên kết bạn bè, vào trang độc lập từ thẻ bên dưới.">
+	<section class="friends-hero glass-panel">
+		<span class="section-kicker">Liên kết bạn bè</span>
+		<h1 class="page-title">Liên kết bạn bè</h1>
+		<p class="page-intro">Danh sách các trang web đã được kiểm duyệt. Đăng ký ở bên dưới danh sách, bấm vào để vào trang độc lập điền thông tin.</p>
+	</section>
+
+	<section class="friends-list glass-panel">
+		<div class="section-head">
+			<h2 class="section-heading">Liên kết bạn bè</h2>
+			<p class="results-summary">Tổng cộng {approvedLinks.length} trang web</p>
+		</div>
+
+		{approvedLinks.length > 0 ? (
+			<ul class="friend-link-list">
+				{approvedLinks.map((item) => (
+					<li class="friend-link-item">
+						<div class="friend-link-meta">
+							<div class="friend-link-avatar" aria-hidden="true">
+								{item.avatarUrl ? (
+									<img
+										src={item.avatarProxyUrl || undefined}
+										alt=""
+										loading="lazy"
+										decoding="async"
+										referrerpolicy="no-referrer"
+									/>
+								) : (
+									<span>{item.name.slice(0, 1)}</span>
+								)}
+							</div>
+							<div>
+								<a
+									href={item.siteUrl}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="friend-link-name"
+								>
+									{item.name}
+								</a>
+								{item.description ? <p class="friend-link-desc">{item.description}</p> : null}
+							{item.description ? <p class="friend-link-desc">{item.description}</p> : null}
+							<p class="friend-link-contact">Liên hệ: {item.contact}</p>
+						</div>
+					</li>
+				))}
+			</ul>
+		) : (
+			<div class="empty-state">
+				<p>Hiện tại chưa có liên kết bạn bè công khai, hãy đăng ký liên kết đầu tiên.</p>
+			</div>
+		)}
+	</section>
+
+	<section class="friend-apply-entry glass-panel" aria-label="Đăng ký liên kết bạn bè">
+		<a href="/friends/apply" class="friend-apply-link">
+			<span class="friend-apply-copy">
+				<strong>Đăng ký liên kết bạn bè</strong>
+				<small>Trang độc lập, bấm vào để điền thông tin trang web, trải nghiệm tương tự như mở rộng bình luận.</small>
+			</span>
+			<span class="friend-apply-icon" aria-hidden="true">+</span>
+		</a>
+	</section>
+</Base>
+
+<style>
+	.friends-hero,
+	.friends-list,
+	.friend-apply-entry {
+		--glass-panel-opacity: calc(var(--hero-card-opacity, 14) / 100);
+		--glass-panel-blur: var(--hero-card-blur, 18px);
+	}
+
+	.friends-hero {
+		display: grid;
+		gap: 1rem;
+		padding: clamp(1.5rem, 1rem + 2vw, 2.5rem);
+	}
+
+	.friends-list,
+	.friend-apply-entry {
+		display: grid;
+		gap: 0;
+		overflow: hidden;
+	}
+
+	.friends-list {
+		padding: 1.2rem;
+		display: grid;
+		gap: 1rem;
+	}
+
+	.friend-link-list {
+		list-style: none;
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.8rem;
+	}
+
+	.friend-link-item {
+		padding: 0.9rem;
+		border-radius: var(--radius-inner);
+		background: rgba(255, 255, 255, 0.06);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+	}
+
+	.friend-link-meta {
+		display: flex;
+		gap: 0.75rem;
+		align-items: flex-start;
+	}
+
+	.friend-link-avatar {
+		width: 2.3rem;
+		height: 2.3rem;
+		border-radius: 50%;
+		overflow: hidden;
+		display: grid;
+		place-items: center;
+		background: rgba(10, 132, 255, 0.14);
+		border: 1px solid rgba(10, 132, 255, 0.26);
+		font-weight: 700;
+		color: var(--color-text);
+		flex-shrink: 0;
+	}
+
+	.friend-link-avatar img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.friend-link-name {
+		font-weight: 700;
+		font-size: 1rem;
+	}
+
+	.friend-link-desc,
+	.friend-link-contact {
+		margin-top: 0.3rem;
+		color: var(--color-text-secondary);
+		font-size: 0.88rem;
+	}
+
+	.friend-apply-link {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: center;
+		gap: var(--space-md);
+		width: 100%;
+		min-height: 5.5rem;
+		padding: 1.05rem 1.2rem;
+		background: transparent;
+		border: none;
+		color: inherit;
+		text-decoration: none;
+		cursor: pointer;
+		text-align: left;
+	}
+
+	.friend-apply-copy {
+		display: grid;
+		gap: 0.24rem;
+		min-width: 0;
+	}
+
+	.friend-apply-copy strong {
+		font-size: 1rem;
+		color: var(--color-text);
+	}
+
+	.friend-apply-copy small {
+		font-size: 0.86rem;
+		color: var(--color-text-secondary);
+		line-height: 1.65;
+		max-width: 62ch;
+	}
+
+	.friend-apply-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.12);
+		border: 1px solid rgba(255, 255, 255, 0.12);
+		font-size: 1.2rem;
+		color: var(--color-accent-hover);
+		transition:
+			transform var(--transition),
+			background-color var(--transition),
+			border-color var(--transition);
+	}
+
+	.friend-apply-link:hover .friend-apply-icon {
+		transform: rotate(90deg);
+		background: var(--color-accent-soft);
+		border-color: rgba(10, 132, 255, 0.16);
+	}
+
+	@media (max-width: 768px) {
+		.friend-link-list {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.friend-apply-link {
+			padding-inline: 1rem;
+			min-height: 5.8rem;
+		}
+	}
+</style>

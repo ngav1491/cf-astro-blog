@@ -1,0 +1,91 @@
+---
+import { env } from "cloudflare:workers";
+import BaseHead from "@/components/BaseHead.astro";
+import Footer from "@/components/Footer.astro";
+import Header from "@/components/Header.astro";
+import { getDb } from "@/lib/db";
+import {
+	buildBackgroundImageUrl,
+	DEFAULT_SITE_APPEARANCE,
+	getSiteAppearance,
+	resolveSiteDescriptionFromAppearance,
+} from "@/lib/site-appearance";
+import { siteConfig } from "@/lib/types";
+import "@/styles/global.css";
+
+interface Props {
+	title: string;
+	description?: string;
+	image?: string;
+	canonicalUrl?: string;
+}
+
+const { title, description, image, canonicalUrl } = Astro.props;
+const isAdminPreview = Astro.url.searchParams.get("adminPreview") === "1";
+let siteAppearance = DEFAULT_SITE_APPEARANCE;
+
+try {
+	siteAppearance = await getSiteAppearance(getDb(env.DB));
+} catch {
+	// D1 未绑定时使用默认外观
+}
+
+const backgroundImageUrl = buildBackgroundImageUrl(
+	siteAppearance.backgroundImageKey,
+);
+const backgroundImageStyle = backgroundImageUrl
+	? `--bg-focus-x: ${siteAppearance.backgroundPositionX}; --bg-focus-y: ${siteAppearance.backgroundPositionY}; --bg-blur: ${siteAppearance.backgroundBlur}px; --bg-scale: ${siteAppearance.backgroundScale / 100}; --bg-opacity: ${siteAppearance.backgroundOpacity / 100};`
+	: "";
+const surfaceStyle = `--hero-card-opacity: ${siteAppearance.heroCardOpacity}; --hero-card-blur: ${siteAppearance.heroCardBlur}px; --post-card-opacity: ${siteAppearance.postCardOpacity}; --post-card-blur: ${siteAppearance.postCardBlur}px; --article-panel-opacity: ${siteAppearance.articlePanelOpacity}; --article-panel-blur: ${siteAppearance.articlePanelBlur}px;`;
+const resolvedDescription =
+	description ??
+	resolveSiteDescriptionFromAppearance(siteAppearance, siteConfig.description);
+---
+
+<!doctype html>
+<html
+	lang={siteConfig.language}
+	data-admin-preview={isAdminPreview ? "true" : undefined}
+>
+	<head>
+		<BaseHead
+			title={title}
+			description={resolvedDescription}
+			image={image}
+			canonicalUrl={canonicalUrl}
+		/>
+		<script is:inline src="/local-time.js"></script>
+		<script is:inline src="/theme.js"></script>
+		<script is:inline src="/code-block-enhance.js"></script>
+		{!isAdminPreview && <script is:inline src="/analytics.js"></script>}
+		{!isAdminPreview && <script is:inline src="/home-motion.js"></script>}
+		{!isAdminPreview && <script is:inline src="/footer-reveal.js"></script>}
+	</head>
+		<body
+			class:list={[
+				"site-shell",
+				{ "site-shell-has-background-image": Boolean(backgroundImageUrl) },
+			]}
+			style={surfaceStyle}
+		>
+		<div class="site-background" aria-hidden="true">
+			{backgroundImageUrl && (
+				<img
+					src={backgroundImageUrl}
+					alt=""
+					class="site-background-image"
+					style={backgroundImageStyle}
+					loading="eager"
+					decoding="async"
+				/>
+			)}
+		</div>
+		<Header siteAppearance={siteAppearance} />
+		<div class="site-route-frame">
+			<main class="container site-main">
+				<slot />
+			</main>
+			<Footer />
+		</div>
+	</body>
+</html>

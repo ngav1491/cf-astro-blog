@@ -1,0 +1,276 @@
+---
+import { env } from "cloudflare:workers";
+import { desc, eq, sql } from "drizzle-orm";
+import PostCard from "@/components/PostCard.astro";
+import { blogCategories, blogPosts } from "@/db/schema";
+import Base from "@/layouts/Base.astro";
+import { getDb } from "@/lib/db";
+import { getPublicPostVisibilityCondition } from "@/lib/public-content";
+
+const page = Number(Astro.url.searchParams.get("page") || "1");
+const limit = 10;
+const offset = (page - 1) * limit;
+
+let posts: Array<{
+	title: string;
+	slug: string;
+	excerpt: string | null;
+	publishedAt: string | null;
+	authorName: string | null;
+	categoryName: string | null;
+	featuredImageKey: string | null;
+	featuredImageAlt: string | null;
+}> = [];
+let totalPosts = 0;
+
+try {
+	const db = getDb(env.DB);
+
+	const [countResult] = await db
+		.select({ count: sql<number>`count(*)` })
+		.from(blogPosts)
+		.where(getPublicPostVisibilityCondition());
+	totalPosts = countResult?.count ?? 0;
+
+	posts = await db
+		.select({
+			title: blogPosts.title,
+			slug: blogPosts.slug,
+			excerpt: blogPosts.excerpt,
+			publishedAt: blogPosts.publishedAt,
+			authorName: blogPosts.authorName,
+			categoryName: blogCategories.name,
+			featuredImageKey: blogPosts.featuredImageKey,
+			featuredImageAlt: blogPosts.featuredImageAlt,
+		})
+		.from(blogPosts)
+		.leftJoin(blogCategories, eq(blogPosts.categoryId, blogCategories.id))
+		.where(getPublicPostVisibilityCondition())
+		.orderBy(desc(blogPosts.publishedAt))
+		.limit(limit)
+		.offset(offset);
+} catch {
+	// Khi D1 không bind, quay về danh sách trống
+}
+
+const totalPages = Math.ceil(totalPosts / limit);
+---
+
+<Base title="Lưu trữ" description="Xem tất cả bài viết đã xuất bản theo thứ tự thời gian">
+	<section
+		class="archive-hero archive-hero-depth glass-panel"
+		data-tilt-card
+		data-tilt-scale="0.38"
+		data-tilt-shift-scale="0.68"
+	>
+		<div class="archive-hero-copy">
+			<span class="section-kicker">Danh mục lưu trữ</span>
+			<h1 class="page-title">Lưu trữ</h1>
+			<p class="page-intro">
+				Tất cả bài viết đã xuất bản đều được sắp xếp theo thứ tự thời gian tại đây, phù hợp để đọc tuần tự hoặc tìm lại bài viết cũ.
+			</p>
+		</div>
+		<div class="archive-hero-meta">
+			<div class="hero-summary">
+				<span>Bài viết đã xuất bản</span>
+				<strong>{totalPosts}</strong>
+			</div>
+			<div class="hero-summary">
+				<span>Trang hiện tại</span>
+				<strong>{page} / {Math.max(totalPages, 1)}</strong>
+			</div>
+		</div>
+	</section>
+
+	{posts.length > 0 ? (
+		<div class="archive-grid">
+			{posts.map((post, index) => (
+				<PostCard
+					title={post.title}
+					slug={post.slug}
+					excerpt={post.excerpt}
+					publishedAt={post.publishedAt}
+					authorName={post.authorName}
+					categoryName={post.categoryName}
+					featuredImageKey={post.featuredImageKey}
+					featuredImageAlt={post.featuredImageAlt}
+					coverSide={index % 2 === 0 ? "left" : "right"}
+				/>
+			))}
+		</div>
+	) : (
+		<div class="empty-state glass-panel">
+			<p>Chưa có bài viết nào được xuất bản.</p>
+		</div>
+	)}
+
+	{totalPages > 1 && (
+		<nav class="pagination glass-panel" aria-label="Phân trang">
+			{page > 1 ? (
+				<a href={`/blog?page=${page - 1}`} class="button button-secondary">Trang trước</a>
+			) : (
+				<span class="pagination-placeholder" />
+			)}
+			<span class="pagination-status">Trang {page} / {totalPages}</span>
+			{page < totalPages ? (
+				<a href={`/blog?page=${page + 1}`} class="button button-secondary">Trang sau</a>
+			) : (
+				<span class="pagination-placeholder" />
+			)}
+		</nav>
+	)}
+</Base>
+
+<style>
+	.archive-hero {
+		--glass-panel-opacity: calc(var(--hero-card-opacity, 14) / 100);
+		--glass-panel-blur: var(--hero-card-blur, 18px);
+		display: grid;
+		grid-template-columns: minmax(0, 1.2fr) minmax(16rem, 0.7fr);
+		gap: 1.2rem;
+		padding: clamp(1.5rem, 1rem + 2vw, 2.5rem);
+	}
+
+	.archive-hero-depth {
+		position: relative;
+		overflow: hidden;
+		transform:
+			perspective(1200px)
+			rotateX(var(--tilt-rotate-x, 0deg))
+			rotateY(var(--tilt-rotate-y, 0deg))
+			scale3d(1.002, 1.002, 1.002);
+		transform-style: preserve-3d;
+		transition:
+			transform var(--nav-motion-surface),
+			box-shadow var(--nav-motion-surface);
+	}
+
+	.archive-hero-depth::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		background:
+			radial-gradient(
+				circle at 84% 18%,
+				rgba(10, 132, 255, 0.18),
+				transparent 42%
+			),
+			linear-gradient(
+				135deg,
+				rgba(255, 255, 255, 0.12),
+				rgba(255, 255, 255, 0.02) 54%,
+				transparent
+			);
+		opacity: 0.68;
+		pointer-events: none;
+		transform: translate3d(
+			calc(var(--tilt-shift-x, 0) * -8px),
+			calc(var(--tilt-shift-y, 0) * -8px),
+			0
+		);
+		transition: transform var(--nav-motion-surface);
+	}
+
+	.archive-hero-copy {
+		display: grid;
+		gap: 1rem;
+		position: relative;
+		z-index: 1;
+		transform: translate3d(
+			calc(var(--tilt-shift-x, 0) * 2px),
+			calc(var(--tilt-shift-y, 0) * 2px),
+			14px
+		);
+		transition: transform var(--nav-motion-surface);
+	}
+
+	.archive-hero-meta {
+		display: grid;
+		gap: 0.9rem;
+		position: relative;
+		z-index: 1;
+		transform: translate3d(
+			calc(var(--tilt-shift-x, 0) * 4px),
+			calc(var(--tilt-shift-y, 0) * 4px),
+			24px
+		);
+		transition: transform var(--nav-motion-surface);
+	}
+
+	.hero-summary {
+		display: grid;
+		gap: 0.35rem;
+		padding: 1.15rem 1.2rem;
+		border-radius: var(--radius-inner);
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid rgba(255, 255, 255, 0.08);
+		backdrop-filter: blur(10px) saturate(120%);
+		-webkit-backdrop-filter: blur(10px) saturate(120%);
+	}
+
+	.hero-summary span {
+		font-size: 0.84rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-text-muted);
+	}
+
+	.hero-summary strong {
+		font-size: clamp(1.5rem, 1.2rem + 1vw, 2.1rem);
+		color: var(--color-text);
+		letter-spacing: -0.04em;
+	}
+
+	.archive-grid {
+		display: grid;
+		gap: 1.2rem;
+	}
+
+	.pagination {
+		display: grid;
+		grid-template-columns: 1fr auto 1fr;
+		align-items: center;
+		gap: 1rem;
+		padding: 1rem 1.2rem;
+	}
+
+	.pagination-status {
+		text-align: center;
+		color: var(--color-text-muted);
+		font-size: 0.92rem;
+	}
+
+	.pagination .button:last-child {
+		justify-self: end;
+	}
+
+	.pagination-placeholder {
+		display: block;
+		min-height: 1px;
+	}
+
+	@media (max-width: 840px) {
+		.archive-hero {
+			grid-template-columns: 1fr;
+		}
+
+		.pagination {
+			grid-template-columns: 1fr;
+		}
+
+		.pagination .button:last-child,
+		.pagination .button:first-child {
+			justify-self: stretch;
+		}
+	}
+
+	@media (hover: none), (pointer: coarse) {
+		.archive-hero-depth,
+		.archive-hero-depth::before,
+		.archive-hero-copy,
+		.archive-hero-meta {
+			transform: none;
+		}
+	}
+</style>

@@ -1,0 +1,197 @@
+---
+import { siteConfig } from "@/lib/types";
+
+const commentsConfig = siteConfig.comments;
+const isCommentConfigReady = Boolean(
+	commentsConfig.repo &&
+		commentsConfig.repoId &&
+		commentsConfig.category &&
+		commentsConfig.categoryId,
+);
+---
+
+<section
+	class="comments-panel"
+	data-comments-panel
+	data-comments-ready={isCommentConfigReady ? "true" : "false"}
+	data-comments-provider={commentsConfig.provider}
+	data-comments-repo={commentsConfig.repo}
+	data-comments-repo-id={commentsConfig.repoId}
+	data-comments-category={commentsConfig.category}
+	data-comments-category-id={commentsConfig.categoryId}
+	data-comments-mapping={commentsConfig.mapping}
+	data-comments-strict={commentsConfig.strict ? "1" : "0"}
+	data-comments-reactions-enabled={commentsConfig.reactionsEnabled ? "1" : "0"}
+	data-comments-input-position={commentsConfig.inputPosition}
+	data-comments-lang={commentsConfig.lang}
+>
+	<button
+		class="comments-toggle"
+		type="button"
+		aria-expanded="false"
+		aria-controls="comments-panel-body"
+		data-comments-toggle
+	>
+		<span class="comments-toggle-copy">
+			<strong>Bình luận</strong>
+			<small>Mặc định thu gọn, bấm mở rộng để load GitHub Discussions</small>
+		</span>
+		<span class="comments-toggle-icon" aria-hidden="true">+</span>
+	</button>
+
+	<div
+		id="comments-panel-body"
+		class="comments-body"
+		hidden
+		data-comments-body
+	>
+		{isCommentConfigReady ? (
+			<div class="comments-surface">
+				<div class="comments-note">
+					<p>Bình luận sẽ được load qua GitHub Discussions</p>
+				</div>
+				<div class="comments-host" data-giscus-host></div>
+			</div>
+		) : (
+			<div class="comments-empty-state">
+				<p>Component bình luận đã được kết nối</p>
+				<p>Cần bật Discussions trong GitHub repo và điền category ID để có thể thực sự bình luận</p>
+				<p>Repo hiện tại: {commentsConfig.repo}</p>
+			</div>
+		)}
+	</div>
+</section>
+
+<script is:inline src="/comments.js"></script>
+
+<style>
+	.comments-panel {
+		display: grid;
+		gap: 0;
+		overflow: hidden;
+		border-radius: var(--radius-inner);
+		border: 1px solid rgba(255, 255, 255, 0.12);
+		background: rgba(255, 255, 255, 0.04);
+	}
+
+	.comments-toggle {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-md);
+		width: 100%;
+		padding: 1.05rem 1.2rem;
+		border: none;
+		background: transparent;
+		color: inherit;
+		cursor: pointer;
+		text-align: left;
+		border-bottom: 1px solid transparent;
+		transition:
+			background-color var(--transition),
+			border-color var(--transition);
+	}
+
+	.comments-toggle:hover,
+	.comments-toggle:focus-visible {
+		background: rgba(255, 255, 255, 0.05);
+		outline: none;
+	}
+
+	.comments-toggle-copy {
+		display: grid;
+		gap: 0.2rem;
+	}
+
+	.comments-toggle-copy strong {
+		font-size: 1rem;
+		color: var(--color-text);
+	}
+
+	.comments-toggle-copy small {
+		font-size: 0.86rem;
+		color: var(--color-text-muted);
+		line-height: 1.65;
+	}
+
+	.comments-toggle-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.12);
+		border: 1px solid rgba(255, 255, 255, 0.12);
+		font-size: 1.2rem;
+		color: var(--color-accent-hover);
+		transition:
+			transform var(--transition),
+			background-color var(--transition),
+			border-color var(--transition);
+	}
+
+	.comments-panel.is-open .comments-toggle-icon {
+		transform: rotate(45deg);
+	}
+
+	.comments-panel.is-open .comments-toggle {
+		border-bottom-color: rgba(255, 255, 255, 0.1);
+	}
+
+	.comments-body {
+		padding: 0 1.2rem 1.2rem;
+	}
+
+	.comments-surface,
+	.comments-empty-state {
+		display: grid;
+		gap: 0.9rem;
+		padding: 1rem;
+		border-radius: var(--radius-inner);
+		background: rgba(255, 255, 255, 0.06);
+		border: 1px solid rgba(255, 255, 255, 0.12);
+	}
+
+	.comments-note,
+	.comments-empty-state {
+		font-size: 0.92rem;
+		color: var(--color-text-muted);
+		line-height: 1.75;
+	}
+
+	.comments-host {
+		min-height: 8rem;
+	}
+
+	.comments-panel.is-open .comments-toggle:hover .comments-toggle-icon {
+		background: var(--color-accent-soft);
+		border-color: rgba(10, 132, 255, 0.16);
+	}
+
+	:global(html.article-opaque-mode) .comments-panel {
+		background: rgba(var(--card-surface-rgb), 0.92);
+		border-color: rgba(255, 255, 255, 0.14);
+	}
+
+	:global(html.article-opaque-mode) .comments-surface,
+	:global(html.article-opaque-mode) .comments-empty-state {
+		background: rgba(var(--card-surface-rgb), 0.96);
+		border-color: rgba(255, 255, 255, 0.16);
+	}
+
+	:global(html.article-opaque-mode) .comments-toggle {
+		background: rgba(var(--card-surface-rgb), 0.94);
+	}
+
+	:global(html.article-opaque-mode) .comments-toggle-icon {
+		background: rgba(255, 255, 255, 0.1);
+	}
+
+	@media (max-width: 640px) {
+		.comments-toggle,
+		.comments-body {
+			padding-inline: 1rem;
+		}
+	}
+</style>

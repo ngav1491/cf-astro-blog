@@ -1,0 +1,254 @@
+---
+import { env } from "cloudflare:workers";
+import "@/styles/post-card.css";
+import SearchBox from "@/components/Search.astro";
+import { blogCategories, blogTags } from "@/db/schema";
+import Base from "@/layouts/Base.astro";
+import { getDb } from "@/lib/db";
+import { sanitizeSlug } from "@/lib/security";
+
+function normalizeDateInput(value: string | null) {
+	if (!value) {
+		return "";
+	}
+
+	const normalized = value.trim();
+	if (!/^\d{4}-\d{2}-\d{2}$/u.test(normalized)) {
+		return "";
+	}
+
+	const parsed = new Date(`${normalized}T00:00:00`);
+	if (Number.isNaN(parsed.getTime())) {
+		return "";
+	}
+
+	const [year, month, day] = normalized.split("-").map((item) => Number(item));
+	if (
+		parsed.getFullYear() !== year ||
+		parsed.getMonth() + 1 !== month ||
+		parsed.getDate() !== day
+	) {
+		return "";
+	}
+
+	return normalized;
+}
+
+const query = Astro.url.searchParams.get("q")?.trim() || "";
+const rawSelectedCategory =
+	Astro.url.searchParams.get("category")?.trim().toLowerCase() || "";
+const selectedCategory = sanitizeSlug(rawSelectedCategory) || "";
+const selectedTags = [
+	...new Set(
+		Astro.url.searchParams
+			.getAll("tags")
+			.map((item) => sanitizeSlug(item))
+			.filter((item): item is string => Boolean(item)),
+	),
+];
+const selectedDateFrom = normalizeDateInput(
+	Astro.url.searchParams.get("dateFrom"),
+);
+const selectedDateTo = normalizeDateInput(Astro.url.searchParams.get("dateTo"));
+
+const hasSearchCriteria = Boolean(
+	query ||
+		selectedCategory ||
+		selectedTags.length > 0 ||
+		selectedDateFrom ||
+		selectedDateTo,
+);
+
+let categories: Array<{ slug: string; name: string }> = [];
+let tags: Array<{ slug: string; name: string }> = [];
+
+try {
+	const db = getDb(env.DB);
+	const [allCategories, allTags] = await Promise.all([
+		db
+			.select({ slug: blogCategories.slug, name: blogCategories.name })
+			.from(blogCategories)
+			.orderBy(blogCategories.name),
+		db
+			.select({ slug: blogTags.slug, name: blogTags.name })
+			.from(blogTags)
+			.orderBy(blogTags.name),
+	]);
+
+	categories = allCategories;
+	tags = allTags;
+} catch {
+	// Khi D1 không bind, quay về tùy chọn trống
+}
+
+const activeFilters = [
+	query ? `Từ khóa: ${query}` : "",
+	selectedCategory ? `Phân loại: ${selectedCategory}` : "",
+	selectedTags.length > 0 ? `Thẻ: ${selectedTags.join(", ")}` : "",
+	selectedDateFrom || selectedDateTo
+		? `Thời gian: ${selectedDateFrom || "Không giới hạn"} đến ${selectedDateTo || "Không giới hạn"}`
+		: "",
+].filter(Boolean);
+---
+
+<Base title="Tìm kiếm" description="Sử dụng Pagefind để tìm kiếm nội dung bài viết ngay trong trình duyệt">
+	<section
+		class="search-hero search-hero-depth glass-panel"
+		data-tilt-card
+		data-tilt-scale="0.42"
+		data-tilt-shift-scale="0.72"
+	>
+		<span class="section-kicker">Tìm kiếm trong site</span>
+		<h1 class="page-title">Tìm kiếm</h1>
+		<p class="page-intro">
+			Tìm kiếm trên trang này được thực hiện bởi Pagefind ngay trong trình duyệt, không cần API tìm kiếm phía server.
+		</p>
+		<div class="search-entry-stage" transition:name="search-entry">
+			<SearchBox
+				initialQuery={query}
+				categories={categories}
+				tags={tags}
+				selectedCategory={selectedCategory}
+				selectedTags={selectedTags}
+				selectedDateFrom={selectedDateFrom}
+				selectedDateTo={selectedDateTo}
+			/>
+		</div>
+	</section>
+
+	<section class="search-results-block" id="search-results-section" style={hasSearchCriteria ? undefined : "display:none"}>
+		<div class="section-head">
+			<div>
+				<h2 class="section-heading">Kết quả tìm kiếm</h2>
+				<p class="section-subheading">
+					{activeFilters.length > 0 ? activeFilters.join(" · ") : "Nhập từ khóa để bắt đầu tìm kiếm"}
+				</p>
+			</div>
+			<p id="pagefind-results-summary" class="results-summary">
+				{hasSearchCriteria ? "Đang tải kết quả tìm kiếm..." : "Nhập từ khóa hoặc điều kiện lọc để bắt đầu tìm kiếm"}
+			</p>
+		</div>
+		<div id="pagefind-search-results" class="search-grid" />
+	</section>
+
+	<script is:inline type="module" src="/pagefind-search.js"></script>
+</Base>
+
+<style>
+	.search-hero {
+		--glass-panel-opacity: calc(var(--hero-card-opacity, 14) / 100);
+		--glass-panel-blur: var(--hero-card-blur, 18px);
+		display: grid;
+		gap: 1rem;
+		padding: clamp(1.5rem, 1rem + 2vw, 2.6rem);
+	}
+
+	.search-hero-depth {
+		position: relative;
+		overflow: hidden;
+		transform:
+			perspective(1200px)
+			rotateX(var(--tilt-rotate-x, 0deg))
+			rotateY(var(--tilt-rotate-y, 0deg))
+			scale3d(1.002, 1.002, 1.002);
+		transform-style: preserve-3d;
+		transition:
+			transform var(--nav-motion-surface),
+			box-shadow var(--nav-motion-surface);
+	}
+
+	.search-hero-depth::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		background:
+			radial-gradient(
+				circle at 18% 24%,
+				rgba(10, 132, 255, 0.22),
+				transparent 38%
+			),
+			linear-gradient(
+				135deg,
+				rgba(255, 255, 255, 0.16),
+				rgba(255, 255, 255, 0.02) 58%,
+				transparent
+			);
+		opacity: 0.72;
+		pointer-events: none;
+		transform: translate3d(
+			calc(var(--tilt-shift-x, 0) * -8px),
+			calc(var(--tilt-shift-y, 0) * -8px),
+			0
+		);
+		transition: transform var(--nav-motion-surface);
+	}
+
+	.search-hero-depth .section-kicker,
+	.search-hero-depth .page-title,
+	.search-hero-depth .page-intro {
+		position: relative;
+		z-index: 1;
+		transform: translate3d(
+			calc(var(--tilt-shift-x, 0) * 2px),
+			calc(var(--tilt-shift-y, 0) * 2px),
+			14px
+		);
+		transition: transform var(--nav-motion-surface);
+	}
+
+	.search-results-block {
+		display: grid;
+		gap: 1.2rem;
+	}
+
+	.search-entry-stage {
+		width: 100%;
+	}
+
+	.search-hero-depth .search-entry-stage {
+		position: relative;
+		z-index: 1;
+		transform: translate3d(
+			calc(var(--tilt-shift-x, 0) * 4px),
+			calc(var(--tilt-shift-y, 0) * 4px),
+			24px
+		);
+		transition: transform var(--nav-motion-surface);
+	}
+
+	.section-head {
+		display: flex;
+		align-items: end;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	.results-summary {
+		color: var(--color-text-muted);
+		font-size: 0.92rem;
+	}
+
+	.search-grid {
+		display: grid;
+		gap: 1rem;
+	}
+
+	@media (max-width: 840px) {
+		.section-head {
+			flex-direction: column;
+			align-items: start;
+		}
+	}
+
+	@media (hover: none), (pointer: coarse) {
+		.search-hero-depth,
+		.search-hero-depth::before,
+		.search-hero-depth .section-kicker,
+		.search-hero-depth .page-title,
+		.search-hero-depth .page-intro,
+		.search-hero-depth .search-entry-stage {
+			transform: none;
+		}
+	}
+</style>

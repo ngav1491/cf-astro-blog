@@ -1,0 +1,62 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"main": "@astrojs/cloudflare/entrypoints/server",
+	"name": "cf-astro-blog",
+	"compatibility_date": "2026-02-10",
+	"compatibility_flags": ["nodejs_compat", "disable_nodejs_process_v2"],
+
+	"assets": {
+		"binding": "ASSETS",
+		"directory": "./dist"
+	},
+
+	"observability": {
+		"enabled": true
+	},
+
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "blog",
+			"database_id": "30838030-7437-4cb6-b618-7eabe62144da",
+			"migrations_dir": "drizzle"
+		}
+	],
+
+	"r2_buckets": [
+		{
+			"binding": "MEDIA_BUCKET",
+			"bucket_name": "blog-media"
+		}
+	],
+
+	"kv_namespaces": [
+		{
+			"binding": "SESSION",
+			"id": "ee2c404dd676463d93bea249decdc0ac"
+		}
+	],
+
+	"vars": {
+		"SITE_NAME": "My Blog",
+		"SITE_URL": "https://blog.ericterminal.com",
+		"TURNSTILE_SITE_KEY": "0x4AAAAAACnxh79QQawnz9UI"
+	}
+
+	// 机密变量可通过 `wrangler secret put` 或本地 `.dev.vars` 配置
+	// JWT_SECRET 
+	// ADMIN_USERNAME 
+	// ADMIN_PASSWORD_HASH 
+	// TURNSTILE_SECRET_KEY 
+	// AUTO_DEPLOY_WEBHOOK_URL
+	// AUTO_DEPLOY_WEBHOOK_SECRET
+	// AUTO_DEPLOY_GITHUB_EVENT_TYPE
+	// AI_INTERNAL_API_KEY
+	// AI_PUBLIC_API_KEY
+	// PUBLIC_AI_RATE_LIMIT_PER_MINUTE
+	// PUBLIC_AI_DAILY_LIMIT_PER_IP
+	// MCP_BEARER_TOKEN
+	// MCP_RATE_LIMIT_PER_MINUTE
+	// MCP_AUTH_FAIL_LIMIT_PER_MINUTE
+	// MCP_AUTH_BLOCK_SECONDS
+}

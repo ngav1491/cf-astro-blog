@@ -1,0 +1,39 @@
+# 建议使用 `openssl rand -hex 32` 生成随机密钥喵
+JWT_SECRET=请替换为随机密钥
+# 仅允许这个 GitHub 用户名登录后台喵
+ADMIN_GITHUB_LOGIN=你的_GitHub_用户名
+# 兼容旧配置时可保留，与 OAuth 模式相比不会再用于密码登录喵
+ADMIN_USERNAME=你的_GitHub_用户名
+# GitHub OAuth App 的客户端 ID 喵
+GITHUB_OAUTH_CLIENT_ID=请替换为_GitHub_OAuth_Client_ID
+# GitHub OAuth App 的客户端密钥喵
+GITHUB_OAUTH_CLIENT_SECRET=请替换为_GitHub_OAuth_Client_Secret
+# 可选，默认会按当前请求地址推导回调地址喵
+GITHUB_OAUTH_REDIRECT_URI=
+# 已切换为 GitHub OAuth 登录后，本地密码哈希不再参与后台登录喵
+ADMIN_PASSWORD_HASH=
+# 如未启用 Turnstile，可留空喵
+TURNSTILE_SECRET_KEY=
+# 可选：后台发布/更新公开文章后，会请求这个部署钩子用于触发重建索引喵
+AUTO_DEPLOY_WEBHOOK_URL=
+# 可选：部署钩子鉴权令牌，会以 x-deploy-token 请求头发送喵
+# 如果 URL 是 GitHub dispatch 接口，会自动改用 Authorization: Bearer 发送喵
+AUTO_DEPLOY_WEBHOOK_SECRET=
+# 可选：GitHub dispatch 事件名，默认 rebuild-search-index 喵
+AUTO_DEPLOY_GITHUB_EVENT_TYPE=rebuild-search-index
+# 可选：内部 AI API Key（设置后优先于后台 Web 配置）喵
+AI_INTERNAL_API_KEY=
+# 可选：公开 AI API Key（设置后优先于后台 Web 配置）喵
+AI_PUBLIC_API_KEY=
+# 可选：公开 AI 每分钟每 IP 限流，默认 12 喵
+PUBLIC_AI_RATE_LIMIT_PER_MINUTE=12
+# 可选：公开 AI 每日每 IP 配额，默认 120 喵
+PUBLIC_AI_DAILY_LIMIT_PER_IP=120
+# 必填：MCP Bearer 鉴权令牌（用于 /api/mcp，非 OAuth）喵
+MCP_BEARER_TOKEN=
+# 可选：MCP 每分钟每 IP 限流，默认 30 喵
+MCP_RATE_LIMIT_PER_MINUTE=30
+# 可选：MCP 鉴权失败每分钟每 IP 次数上限，超过会进入临时封禁，默认 20 喵
+MCP_AUTH_FAIL_LIMIT_PER_MINUTE=20
+# 可选：MCP 鉴权失败触发封禁后的封禁秒数，默认 3600（1小时）喵
+MCP_AUTH_BLOCK_SECONDS=3600

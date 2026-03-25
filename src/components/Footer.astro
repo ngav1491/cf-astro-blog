@@ -1,0 +1,21 @@
+---
+import { siteConfig } from "@/lib/types";
+
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer" data-footer-reveal>
+	<div class="container">
+			<div class="footer-inner glass-panel">
+				<div class="footer-copy">
+					<p class="footer-title">{siteConfig.name}</p>
+				</div>
+				<p class="footer-meta">
+					© {year} · {siteConfig.author} ·
+					<a href="https://icp.gov.moe/?keyword=20260256" target="_blank" rel="noopener noreferrer"
+						>Giấy phép ICP 20260256</a
+					>
+				</p>
+			</div>
+	</div>
+</footer>
