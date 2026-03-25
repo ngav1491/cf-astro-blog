@@ -229,14 +229,14 @@ INSERT INTO analytics_events (
 
 publicAnalyticsRoutes.post("/track", async (c) => {
 	if (!isSameOriginRequest(c)) {
-		return c.json({ error: "非法来源请求" }, 403);
+		return c.json({ error: "Yêu cầu từ nguồn không hợp lệ" }, 403);
 	}
 
 	const body = await c.req.text();
 	const requestUrl = new URL(c.req.url);
 	const payload = parseTrackPayload(body, requestUrl);
 	if (!payload) {
-		return c.json({ error: "无效的统计上报数据" }, 400);
+		return c.json({ error: "Dữ liệu báo cáo thống kê không hợp lệ" }, 400);
 	}
 
 	const userAgent = sanitizePlainText(c.req.header("user-agent"), 255);
@@ -305,7 +305,7 @@ publicAnalyticsRoutes.post("/track", async (c) => {
 			.run();
 	} catch (error) {
 		console.error("analytics_track_failed", error);
-		return c.json({ error: "统计写入失败" }, 503);
+		return c.json({ error: "Ghi thống kê thất bại" }, 503);
 	}
 
 	return c.body(null, 204);

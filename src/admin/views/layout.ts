@@ -14,13 +14,13 @@ type AdminNavKey =
 	| "analytics";
 
 const navItems: Array<{ key: AdminNavKey; label: string; href: string }> = [
-	{ key: "dashboard", label: "控制台", href: "/api/admin" },
-	{ key: "appearance", label: "外观", href: "/api/admin/appearance" },
-	{ key: "posts", label: "文章", href: "/api/admin/posts" },
-	{ key: "friends", label: "友链", href: "/api/admin/friends" },
-	{ key: "mentions", label: "提及", href: "/api/admin/mentions" },
-	{ key: "media", label: "媒体", href: "/api/admin/media" },
-	{ key: "analytics", label: "统计", href: "/api/admin/analytics" },
+	{ key: "dashboard", label: "Bảng điều khiển", href: "/api/admin" },
+	{ key: "appearance", label: "Giao diện", href: "/api/admin/appearance" },
+	{ key: "posts", label: "Bài viết", href: "/api/admin/posts" },
+	{ key: "friends", label: "Bạn bè", href: "/api/admin/friends" },
+	{ key: "mentions", label: "Đề cập", href: "/api/admin/mentions" },
+	{ key: "media", label: "Phương tiện", href: "/api/admin/media" },
+	{ key: "analytics", label: "Thống kê", href: "/api/admin/analytics" },
 ];
 
 export const adminSharedStyles = `
@@ -1386,18 +1386,18 @@ export const adminSharedStyles = `
 `;
 
 function resolveActiveNav(title: string): AdminNavKey {
-	if (title.includes("外观")) return "appearance";
-	if (title.includes("友链")) return "friends";
-	if (title.includes("提及")) return "mentions";
+	if (title.includes("Giao diện")) return "appearance";
+	if (title.includes("Bạn bè")) return "friends";
+	if (title.includes("Đề cập")) return "mentions";
 	if (
-		title.includes("文章") ||
-		title.includes("编辑") ||
-		title.includes("新建")
+		title.includes("Bài viết") ||
+		title.includes("Chỉnh sửa") ||
+		title.includes("Tạo")
 	) {
 		return "posts";
 	}
-	if (title.includes("媒体")) return "media";
-	if (title.includes("统计")) return "analytics";
+	if (title.includes("Phương tiện")) return "media";
+	if (title.includes("Thống kê")) return "analytics";
 	return "dashboard";
 }
 
@@ -1423,16 +1423,16 @@ export function adminLayout(
 	const logoutForm = options.csrfToken
 		? `<form method="post" action="/api/auth/logout">
 				<input type="hidden" name="_csrf" value="${escapeAttribute(options.csrfToken)}" />
-				<button type="submit" class="btn btn-sm">退出登录</button>
+				<button type="submit" class="btn btn-sm">Đăng xuất</button>
 			</form>`
 		: "";
 
 	return `<!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="vi">
 <head>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>${escapeHtml(title)} | 后台</title>
+	<title>${escapeHtml(title)} | Quản trị</title>
 	<meta name="robots" content="noindex, nofollow" />
 	<script src="/admin.js" defer></script>
 	<style>
@@ -1449,7 +1449,7 @@ ${adminSharedStyles}
 				<div class="sidebar-footer">
 					<div class="admin-toolbar">
 						<div class="sidebar-footer-links">
-							<a href="/" target="_blank" rel="noopener noreferrer" class="btn btn-sm">查看站点</a>
+						<a href="/" target="_blank" rel="noopener noreferrer" class="btn btn-sm">Xem trang web</a>
 						</div>
 						${logoutForm}
 					</div>

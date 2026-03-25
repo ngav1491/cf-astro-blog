@@ -86,8 +86,8 @@ function isPostPublic(
 
 function renderPostErrorPage(csrfToken: string, message: string) {
 	return adminLayout(
-		"文章保存失败",
-		`<div class="alert alert-error">${escapeHtml(message)}</div><p><a href="/api/admin/posts">返回文章列表</a></p>`,
+		"Lỗi lưu bài viết",
+		`<div class="alert alert-error">${escapeHtml(message)}</div><p><a href="/api/admin/posts">Quay về danh sách bài viết</a></p>`,
 		{ csrfToken },
 	);
 }
@@ -109,7 +109,7 @@ function parsePostInput(
 ): ParsedPostInputResult {
 	const title = sanitizePlainText(body.title, 200);
 	if (!title) {
-		return { error: "标题不能为空" } as const;
+		return { error: "Tiêu đề không được để trống" } as const;
 	}
 
 	const authorName =
@@ -120,7 +120,7 @@ function parsePostInput(
 	const rawSlugInput = sanitizePlainText(body.slug, 120).toLowerCase();
 	const manualSlug = rawSlugInput ? sanitizeSlug(rawSlugInput) : null;
 	if (rawSlugInput && !manualSlug) {
-		return { error: "网址别名格式不合法" } as const;
+		return { error: "Định dạng slug không hợp lệ" } as const;
 	}
 
 	const slug =
@@ -132,12 +132,12 @@ function parsePostInput(
 		trim: false,
 	});
 	if (!content.trim()) {
-		return { error: "正文不能为空" } as const;
+		return { error: "Nội dung không được để trống" } as const;
 	}
 
 	const status = sanitizePostStatus(body.status);
 	if (!status) {
-		return { error: "文章状态不合法" } as const;
+		return { error: "Trạng thái bài viết không hợp lệ" } as const;
 	}
 
 	const publishAtRaw = sanitizePlainText(body.publishAt, 32, { trim: true });
@@ -145,12 +145,12 @@ function parsePostInput(
 	if (publishAtRaw) {
 		const parsed = new Date(publishAtRaw);
 		if (Number.isNaN(parsed.getTime())) {
-			return { error: "定时发布时间格式不合法" } as const;
+			return { error: "Định dạng thời gian xuất bản hẹn giờ không hợp lệ" } as const;
 		}
 		publishAt = parsed.toISOString();
 	}
 	if (status === "scheduled" && !publishAt) {
-		return { error: "定时发布需要填写发布时间" } as const;
+		return { error: "Cần điền thời gian xuất bản khi hẹn giờ" } as const;
 	}
 
 	const publishedAtRaw = sanitizePlainText(body.publishedAt, 32, {
@@ -160,7 +160,7 @@ function parsePostInput(
 	if (publishedAtRaw) {
 		const parsed = new Date(publishedAtRaw);
 		if (Number.isNaN(parsed.getTime())) {
-			return { error: "发布日期格式不合法" } as const;
+			return { error: "Định dạng ngày xuất bản không hợp lệ" } as const;
 		}
 		publishedAt = parsed.toISOString();
 	}
@@ -172,7 +172,7 @@ function parsePostInput(
 			? parseOptionalPositiveInt(categoryIdRaw)
 			: null;
 	if (categoryIdRaw && !isNewCategorySelected && categoryId === null) {
-		return { error: "分类参数不合法" } as const;
+		return { error: "Tham số phân loại không hợp lệ" } as const;
 	}
 
 	const canonicalUrlRaw = String(body.canonicalUrl ?? "").trim();
@@ -180,7 +180,7 @@ function parsePostInput(
 		? sanitizeCanonicalUrl(canonicalUrlRaw)
 		: null;
 	if (canonicalUrlRaw && !canonicalUrl) {
-		return { error: "规范链接地址不合法" } as const;
+		return { error: "Địa chỉ liên kết chuẩn không hợp lệ" } as const;
 	}
 
 	const featuredImageKeyRaw = String(body.featuredImageKey ?? "").trim();
@@ -188,7 +188,7 @@ function parsePostInput(
 		? sanitizeMediaKey(featuredImageKeyRaw)
 		: null;
 	if (featuredImageKeyRaw && !featuredImageKey) {
-		return { error: "封面图片键名不合法" } as const;
+		return { error: "Khóa hình ảnh bìa không hợp lệ" } as const;
 	}
 
 	const isPinnedRaw = String(body.isPinned ?? "")
@@ -205,7 +205,7 @@ function parsePostInput(
 			parsedPinnedOrder < 1 ||
 			parsedPinnedOrder > 9999
 		) {
-			return { error: "置顶顺序需填写 1-9999 的整数" } as const;
+			return { error: "Thứ tự ghim cần là số nguyên từ 1-9999" } as const;
 		}
 		pinnedOrder = parsedPinnedOrder;
 	}
@@ -218,7 +218,7 @@ function parsePostInput(
 	});
 	const newCategoryName = sanitizePlainText(body.newCategoryName, 60) || null;
 	if (isNewCategorySelected && !newCategoryName) {
-		return { error: "你选择了新建分类，请输入分类名称" } as const;
+		return { error: "Bạn đã chọn tạo phân loại mới, vui lòng nhập tên phân loại" } as const;
 	}
 
 	return {
@@ -419,20 +419,20 @@ function resolvePostsAlert(status: string | null) {
 		case "schedule-cancelled":
 			return {
 				type: "success",
-				message: "已取消定时发布，文章已转为草稿",
+				message: "Đã hủy xuất bản hẹn giờ, bài viết đã chuyển thành bản nháp",
 			} as const;
 		case "category-deleted":
-			return { type: "success", message: "分类已删除" } as const;
+			return { type: "success", message: "Đã xóa phân loại" } as const;
 		case "tag-deleted":
-			return { type: "success", message: "标签已删除" } as const;
+			return { type: "success", message: "Đã xóa nhãn" } as const;
 		case "category-in-use":
-			return { type: "error", message: "分类仍有关联文章，无法删除" } as const;
+			return { type: "error", message: "Phân loại vẫn còn bài viết liên kết, không thể xóa" } as const;
 		case "tag-in-use":
-			return { type: "error", message: "标签仍有关联文章，无法删除" } as const;
+			return { type: "error", message: "Nhãn vẫn còn bài viết liên kết, không thể xóa" } as const;
 		case "invalid-id":
-			return { type: "error", message: "参数不合法" } as const;
+			return { type: "error", message: "Tham số không hợp lệ" } as const;
 		case "csrf-failed":
-			return { type: "error", message: "CSRF 校验失败，请刷新后重试" } as const;
+			return { type: "error", message: "Xác thực CSRF thất bại, vui lòng tải lại trang" } as const;
 		default:
 			return undefined;
 	}
@@ -548,7 +548,7 @@ posts.post("/", async (c) => {
 	const db = getDb(c.env.DB);
 	const body = await c.req.parseBody();
 	if (!assertCsrfToken(getBodyText(body, "_csrf"), session)) {
-		return c.text("CSRF 校验失败", 403);
+		return c.text("Xác thực CSRF thất bại", 403);
 	}
 
 	const defaultAuthorName = await getDefaultPostAuthorName(db);
@@ -628,7 +628,7 @@ posts.post("/ai-seo", async (c) => {
 		return c.json(
 			{
 				success: false,
-				message: "CSRF 校验失败，请刷新页面后重试",
+				message: "Xác thực CSRF thất bại, vui lòng tải lại trang",
 			},
 			403,
 		);
@@ -643,7 +643,7 @@ posts.post("/ai-seo", async (c) => {
 		return c.json(
 			{
 				success: false,
-				message: "请先填写文章标题后再生成",
+				message: "Vui lòng nhập tiêu đề bài viết trước khi tạo",
 			},
 			400,
 		);
@@ -652,7 +652,7 @@ posts.post("/ai-seo", async (c) => {
 		return c.json(
 			{
 				success: false,
-				message: "请先填写正文后再生成",
+				message: "Vui lòng nhập nội dung trước khi tạo",
 			},
 			400,
 		);
@@ -671,7 +671,7 @@ posts.post("/ai-seo", async (c) => {
 		return c.json(
 			{
 				success: false,
-				message: "内部 AI 接口未配置完整，请先在外观设置中填写后再试",
+				message: "Giao diện AI nội bộ chưa được cấu hình đầy đủ, vui lòng điền trong cài đặt giao diện trước",
 			},
 			503,
 		);
@@ -687,12 +687,12 @@ posts.post("/ai-seo", async (c) => {
 			aiSettings.settings.internal,
 		);
 	} catch (error) {
-		console.error("[文章 AI 生成] 请求失败", error);
+		console.error("[Tạo AI bài viết] Yêu cầu thất bại", error);
 		return c.json(
 			{
 				success: false,
 				message:
-					error instanceof Error ? error.message : "AI 生成失败，请稍后重试",
+					error instanceof Error ? error.message : "Tạo AI thất bại, vui lòng thử lại sau",
 			},
 			502,
 		);
@@ -701,7 +701,7 @@ posts.post("/ai-seo", async (c) => {
 		return c.json(
 			{
 				success: false,
-				message: "AI 未生成结果，请检查标题和正文后重试",
+				message: "AI không tạo được kết quả, vui lòng kiểm tra tiêu đề và nội dung rồi thử lại",
 			},
 			502,
 		);
@@ -763,7 +763,7 @@ posts.post("/:id", async (c) => {
 	const db = getDb(c.env.DB);
 	const body = await c.req.parseBody();
 	if (!assertCsrfToken(getBodyText(body, "_csrf"), session)) {
-		return c.text("CSRF 校验失败", 403);
+		return c.text("Xác thực CSRF thất bại", 403);
 	}
 
 	const defaultAuthorName = await getDefaultPostAuthorName(db);
@@ -863,7 +863,7 @@ posts.post("/:id/delete", async (c) => {
 	const session = getAuthenticatedSession(c);
 	const body = await c.req.parseBody();
 	if (!assertCsrfToken(getBodyText(body, "_csrf"), session)) {
-		return c.text("CSRF 校验失败", 403);
+		return c.text("Xác thực CSRF thất bại", 403);
 	}
 
 	const id = parseOptionalPositiveInt(c.req.param("id"));

@@ -204,7 +204,7 @@ auth.get("/login", async (c) => {
 				return c.redirect("/api/admin");
 			}
 		} catch {
-			// 会话存储偶发失败时保持登录页可用，避免把访客困在 500
+			// Khi lưu trữ phiên gặp lỗi tạm thời, vẫn giữ trang đăng nhập khả dụng, tránh để khách bị mắc kẹt ở 500
 		}
 	}
 
@@ -215,7 +215,7 @@ auth.get("/login", async (c) => {
 		const appearance = await getSiteAppearance(getDb(c.env.DB));
 		backgroundImageUrl = buildBackgroundImageUrl(appearance.backgroundImageKey);
 	} catch {
-		// DB 未绑定或查询失败时退化为无背景图
+		// Khi DB không được bind hoặc truy vấn thất bại, sẽ quay về không có hình nền
 	}
 
 	return c.html(

@@ -67,7 +67,7 @@ export function postEditorPage(data: EditorData): string {
 	const authorNameValue = post?.authorName?.trim() || defaultAuthorName.trim();
 
 	const content = `
-		<h1>${isEdit ? "编辑文章" : "新建文章"}</h1>
+		<h1>${isEdit ? "Chỉnh sửa bài viết" : "Tạo bài viết mới"}</h1>
 		${error ? `<div class="alert alert-error">${escapeHtml(error)}</div>` : ""}
 
 		<form
@@ -81,12 +81,12 @@ export function postEditorPage(data: EditorData): string {
 			<div class="editor-grid">
 				<div class="editor-panel">
 					<div class="form-group">
-						<label for="title">标题</label>
+						<label for="title">Tiêu đề</label>
 						<input type="text" id="title" name="title" class="form-input" value="${escapeAttribute(post?.title || "")}" required maxlength="200" />
 					</div>
 
 					<div class="form-group">
-						<label for="slug">访问路径</label>
+						<label for="slug">Đường dẫn truy cập</label>
 						<input
 							type="text"
 							id="slug"
@@ -95,14 +95,14 @@ export function postEditorPage(data: EditorData): string {
 							value="${escapeAttribute(post?.slug || "")}"
 							pattern="[a-z0-9\\-]*"
 							maxlength="120"
-							placeholder="留空自动生成"
+							placeholder="Để trống sẽ tự động tạo"
 							data-manual="${isEdit ? "true" : "false"}"
 						/>
-						<p class="form-help">/blog/<span data-slug-preview>${escapeHtml(post?.slug || "自动生成")}</span></p>
+						<p class="form-help">/blog/<span data-slug-preview>${escapeHtml(post?.slug || "tự động tạo")}</span></p>
 					</div>
 
 					<div class="form-group">
-						<label for="excerpt">摘要</label>
+						<label for="excerpt">Mô tả ngắn</label>
 						<input type="text" id="excerpt" name="excerpt" class="form-input" value="${escapeAttribute(post?.excerpt || "")}" maxlength="200" />
 						<div class="draft-toolbar ai-seo-toolbar">
 							<button
@@ -111,14 +111,14 @@ export function postEditorPage(data: EditorData): string {
 								data-ai-seo-generate="true"
 								data-ai-seo-endpoint="/api/admin/posts/ai-seo"
 							>
-								AI 生成摘要与 SEO
+								AI tạo mô tả và SEO
 							</button>
-							<span class="form-help" data-ai-seo-status>将基于当前标题和正文回填摘要、SEO 标题/描述/关键词</span>
+							<span class="form-help" data-ai-seo-status>Sẽ dựa trên tiêu đề và nội dung hiện tại để tạo mô tả, tiêu đề SEO/mô tả/từ khóa</span>
 						</div>
 					</div>
 
 					<div class="form-group">
-						<label for="authorName">作者</label>
+						<label for="authorName">Tác giả</label>
 						<input
 							type="text"
 							id="authorName"
@@ -128,22 +128,22 @@ export function postEditorPage(data: EditorData): string {
 							maxlength="120"
 							required
 						/>
-						<p class="form-help">用于首页和文章页展示，默认带入站点外观里的“文章作者名”，不会使用 GitHub 登录名。</p>
+						<p class="form-help">Dùng để hiển thị ở trang chủ và trang bài viết, mặc định lấy từ phần "Tên tác giả bài viết" trong giao diện trang web, không dùng tên đăng nhập GitHub.</p>
 					</div>
 
 					<div class="form-group">
-						<label for="content">正文（Markdown）</label>
+						<label for="content">Nội dung (Markdown)</label>
 						<div class="markdown-editor-shell">
 							<textarea id="content" name="content" class="form-textarea" required data-markdown-input="true">${escapeTextarea(post?.content || "")}</textarea>
-							<section class="markdown-preview-panel" aria-label="Markdown 实时预览">
-								<div class="markdown-preview-head">实时预览</div>
+							<section class="markdown-preview-panel" aria-label="Xem trước Markdown">
+								<div class="markdown-preview-head">Xem trước trực tiếp</div>
 								<div class="markdown-preview-body" data-markdown-preview="true"></div>
 							</section>
 						</div>
-						<p class="form-help">输入内容后会在右侧实时预览，单换行也会保留显示。</p>
+						<p class="form-help">Nhập nội dung sẽ được xem trước trực tiếp ở bên phải, kể cả dấu xuống dòng đơn.</p>
 						<div class="draft-toolbar" data-draft-toolbar="true" hidden>
-							<button type="button" class="btn btn-sm" data-draft-restore="true" hidden>恢复本地草稿</button>
-							<button type="button" class="btn btn-sm btn-danger" data-draft-clear="true" hidden>清除本地草稿</button>
+							<button type="button" class="btn btn-sm" data-draft-restore="true" hidden>Khôi phục bản nháp cục bộ</button>
+							<button type="button" class="btn btn-sm btn-danger" data-draft-clear="true" hidden>Xóa bản nháp cục bộ</button>
 							<span class="form-help" data-draft-status="true"></span>
 						</div>
 						<p class="form-help" data-content-upload-status></p>
@@ -152,7 +152,7 @@ export function postEditorPage(data: EditorData): string {
 
 				<div class="editor-panel">
 					<div class="form-group">
-						<label for="status">状态</label>
+						<label for="status">Trạng thái</label>
 						<select id="status" name="status" class="form-select">
 							<option value="draft" ${currentStatus === "draft" ? "selected" : ""}>${getPostStatusLabel("draft")}</option>
 							<option value="published" ${currentStatus === "published" ? "selected" : ""}>${getPostStatusLabel("published")}</option>
@@ -161,7 +161,7 @@ export function postEditorPage(data: EditorData): string {
 					</div>
 
 					<div class="form-group schedule-field ${isScheduled ? "" : "is-hidden"}" data-schedule-field="true">
-						<label for="publishAt">定时发布时间</label>
+						<label for="publishAt">Thời gian xuất bản hẹn giờ</label>
 						<input
 							type="datetime-local"
 							id="publishAt"
@@ -175,7 +175,7 @@ export function postEditorPage(data: EditorData): string {
 					</div>
 
 					<div class="form-group published-date-field ${isPublished ? "" : "is-hidden"}" data-published-date-field="true">
-						<label for="publishedAt">发布日期</label>
+						<label for="publishedAt">Ngày xuất bản</label>
 						<input
 							type="datetime-local"
 							id="publishedAt"
@@ -187,7 +187,7 @@ export function postEditorPage(data: EditorData): string {
 							max="9999-12-31T23:59"
 							${isPublished ? "" : "disabled"}
 						/>
-						<p class="form-help">支持手动修改发布日期，最晚可设置到 9999 年。</p>
+						<p class="form-help">Có thể sửa ngày xuất bản thủ công, tối đa đến năm 9999.</p>
 					</div>
 
 					<div class="form-group">
@@ -199,13 +199,13 @@ export function postEditorPage(data: EditorData): string {
 								value="1"
 								${isPinned ? "checked" : ""}
 							/>
-							首页置顶文章
+							Ghim bài viết lên trang chủ
 						</label>
-						<p class="form-help">勾选后会在首页“置顶文章”板块固定展示。</p>
+						<p class="form-help">Sau khi chọn, bài viết sẽ được hiển thị cố định ở phần "Bài viết đã ghim" trên trang chủ.</p>
 					</div>
 
 					<div class="form-group">
-						<label for="pinnedOrder">置顶顺序</label>
+						<label for="pinnedOrder">Thứ tự ghim</label>
 						<input
 							type="number"
 							id="pinnedOrder"
@@ -215,15 +215,15 @@ export function postEditorPage(data: EditorData): string {
 							min="1"
 							max="9999"
 						/>
-						<p class="form-help">数值越小越靠前；未勾选置顶时此值会自动忽略。</p>
+						<p class="form-help">Số nhỏ hơn sẽ hiển thị ở trên; nếu không chọn ghim thì giá trị này sẽ được bỏ qua.</p>
 					</div>
 
 					<div class="form-group">
-						<label for="categoryId">分类</label>
+						<label for="categoryId">Phân loại</label>
 						<select id="categoryId" name="categoryId" class="form-select">
-							<option value="">未分类</option>
+							<option value="">Chưa phân loại</option>
 							${categories.map((cat) => `<option value="${cat.id}" ${post?.categoryId === cat.id ? "selected" : ""}>${escapeHtml(cat.name)}</option>`).join("")}
-							<option value="__new__">+ 新建分类</option>
+							<option value="__new__">+ Tạo phân loại mới</option>
 						</select>
 						<div class="new-category-wrap is-hidden" data-new-category-wrap="true">
 							<input
@@ -232,7 +232,7 @@ export function postEditorPage(data: EditorData): string {
 								name="newCategoryName"
 								class="form-input"
 								maxlength="60"
-								placeholder="输入新分类"
+								placeholder="Nhập phân loại mới"
 								disabled
 								data-new-category-input="true"
 							/>
@@ -240,7 +240,7 @@ export function postEditorPage(data: EditorData): string {
 					</div>
 
 					<div class="form-group">
-						<label for="featuredImageKey">封面图片</label>
+						<label for="featuredImageKey">Hình ảnh bìa</label>
 						<input
 							type="hidden"
 							id="featuredImageKey"
@@ -264,45 +264,45 @@ export function postEditorPage(data: EditorData): string {
 							<div class="cover-dropzone" data-cover-dropzone="true">
 								${
 									featuredImageUrl
-										? `<img src="${escapeAttribute(featuredImageUrl)}" alt="${escapeAttribute(featuredImageAlt || "封面预览")}" class="cover-preview-image" data-cover-preview-image="true" />`
-										: `<div class="cover-empty" data-cover-empty="true">拖拽图片或点击上传</div>`
+										? `<img src="${escapeAttribute(featuredImageUrl)}" alt="${escapeAttribute(featuredImageAlt || "Xem trước bìa")}" class="cover-preview-image" data-cover-preview-image="true" />`
+										: `<div class="cover-empty" data-cover-empty="true">Kéo thả hình ảnh hoặc nhấp để tải lên</div>`
 								}
 							</div>
 							<div class="cover-actions">
-								<button type="button" class="btn btn-sm" data-cover-select="true">上传封面</button>
-								<button type="button" class="btn btn-sm btn-danger" data-cover-clear="true">清空封面</button>
+								<button type="button" class="btn btn-sm" data-cover-select="true">Tải lên bìa</button>
+								<button type="button" class="btn btn-sm btn-danger" data-cover-clear="true">Xóa bìa</button>
 							</div>
 							<p class="form-help" data-cover-upload-status></p>
 						</div>
 					</div>
 
 					<div class="form-group">
-						<label for="featuredImageAlt">封面替代文本</label>
-						<input type="text" id="featuredImageAlt" name="featuredImageAlt" class="form-input" value="${escapeAttribute(featuredImageAlt)}" maxlength="200" placeholder="可选，建议描述封面内容用于可访问性" />
+						<label for="featuredImageAlt">Văn bản thay thế cho hình ảnh</label>
+						<input type="text" id="featuredImageAlt" name="featuredImageAlt" class="form-input" value="${escapeAttribute(featuredImageAlt)}" maxlength="200" placeholder="Tùy chọn, nên mô tả nội dung hình ảnh để hỗ trợ khả năng tiếp cận" />
 					</div>
 
 					<details>
-						<summary>SEO（可选）</summary>
+						<summary>SEO (Tùy chọn)</summary>
 						<div class="form-group">
-							<label for="metaTitle">SEO 标题</label>
+							<label for="metaTitle">Tiêu đề SEO</label>
 							<input type="text" id="metaTitle" name="metaTitle" class="form-input" value="${escapeAttribute(post?.metaTitle || "")}" maxlength="200" />
 						</div>
 						<div class="form-group">
-							<label for="metaDescription">SEO 描述</label>
+							<label for="metaDescription">Mô tả SEO</label>
 							<input type="text" id="metaDescription" name="metaDescription" class="form-input" value="${escapeAttribute(post?.metaDescription || "")}" maxlength="160" />
 						</div>
 						<div class="form-group">
-							<label for="metaKeywords">SEO 关键词</label>
+							<label for="metaKeywords">Từ khóa SEO</label>
 							<input type="text" id="metaKeywords" name="metaKeywords" class="form-input" value="${escapeAttribute(post?.metaKeywords || "")}" maxlength="200" />
 						</div>
 						<div class="form-group">
-							<label for="canonicalUrl">规范链接地址</label>
+							<label for="canonicalUrl">Địa chỉ liên kết chuẩn</label>
 							<input type="url" id="canonicalUrl" name="canonicalUrl" class="form-input" value="${escapeAttribute(post?.canonicalUrl || "")}" maxlength="255" />
 						</div>
 					</details>
 
 					<div class="form-group">
-						<label>标签</label>
+						<label>Nhãn</label>
 						<input type="hidden" id="tagIds" name="tagIds" value="${escapeAttribute(selectedTagIds.join(","))}" />
 						<div class="tag-list">
 							${
@@ -316,7 +316,7 @@ export function postEditorPage(data: EditorData): string {
 								</label>`,
 											)
 											.join("")
-									: `<span class="form-help">暂无标签</span>`
+									: `<span class="form-help">Chưa có nhãn</span>`
 							}
 						</div>
 						<input
@@ -325,13 +325,13 @@ export function postEditorPage(data: EditorData): string {
 							name="newTagNames"
 							class="form-input"
 							maxlength="400"
-							placeholder="新标签，多个用逗号分隔"
+							placeholder="Nhãn mới, nhiều nhãn cách nhau bằng dấu phẩy"
 						/>
 					</div>
 
 					<div class="form-actions">
-						<button type="submit" class="btn btn-primary">${isEdit ? "保存修改" : "创建文章"}</button>
-						<a href="/api/admin/posts" class="btn">取消</a>
+						<button type="submit" class="btn btn-primary">${isEdit ? "Lưu thay đổi" : "Tạo bài viết"}</button>
+						<a href="/api/admin/posts" class="btn">Hủy</a>
 					</div>
 				</div>
 			</div>
@@ -339,7 +339,7 @@ export function postEditorPage(data: EditorData): string {
 
 	`;
 
-	return adminLayout(isEdit ? "编辑文章" : "新建文章", content, {
+	return adminLayout(isEdit ? "Chỉnh sửa bài viết" : "Tạo bài viết mới", content, {
 		csrfToken,
 	});
 }

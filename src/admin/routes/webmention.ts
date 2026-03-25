@@ -103,7 +103,7 @@ function isPrivateIpv6(hostname: string): boolean {
 		return true;
 	}
 
-	// 为了避免 IPv4 映射地址绕过，直接拒绝整个 ::ffff: 前缀。
+	// Để tránh địa chỉ IPv4 ánh xạ bị绕过, trực tiếp từ chối toàn bộ tiền tố ::ffff:.
 	return hostname.startsWith("::ffff:");
 }
 
@@ -130,15 +130,15 @@ function isBlockedSourceHost(hostname: string): boolean {
 
 function validateSourceUrl(sourceUrl: URL): string | null {
 	if (!["http:", "https:"].includes(sourceUrl.protocol)) {
-		return "source 仅允许使用 http/https 协议。";
+		return "source chỉ cho phép sử dụng giao thức http/https.";
 	}
 
 	if (sourceUrl.username || sourceUrl.password) {
-		return "source URL 不允许携带用户名或密码。";
+		return "URL source không được phép chứa tên người dùng hoặc mật khẩu.";
 	}
 
 	if (isBlockedSourceHost(sourceUrl.hostname)) {
-		return "source 不允许使用本地或内网主机地址。";
+		return "source không được phép sử dụng địa chỉ máy chủ cục bộ hoặc nội bộ.";
 	}
 
 	return null;
@@ -364,27 +364,27 @@ async function fetchSourceHtml(sourceUrl: URL): Promise<SourceHtmlFetchResult> {
 				});
 			} catch (error) {
 				if (error instanceof Error && error.name === "AbortError") {
-					return { ok: false, error: "抓取 source 页面超时。" };
+					return { ok: false, error: "Hết thời gian khi tìm nạp trang source." };
 				}
-				return { ok: false, error: "抓取 source 页面失败。" };
+				return { ok: false, error: "Tìm nạp trang source thất bại." };
 			}
 
 			if (isRedirectStatus(response.status)) {
 				const location = response.headers.get("location");
 				if (!location) {
-					return { ok: false, error: "source 跳转响应缺少 location。" };
+					return { ok: false, error: "Phản hồi chuyển hướng source thiếu location." };
 				}
 
 				try {
 					currentUrl = new URL(location, currentUrl);
 				} catch {
-					return { ok: false, error: "source 跳转地址不合法。" };
+					return { ok: false, error: "Địa chỉ chuyển hướng source không hợp lệ." };
 				}
 				continue;
 			}
 
 			if (!response.ok) {
-				return { ok: false, error: "无法访问 source 页面。" };
+				return { ok: false, error: "Không thể truy cập trang source." };
 			}
 
 			const contentType = response.headers.get("content-type") || "";
@@ -392,7 +392,7 @@ async function fetchSourceHtml(sourceUrl: URL): Promise<SourceHtmlFetchResult> {
 				!contentType.includes("text/html") &&
 				!contentType.includes("application/xhtml+xml")
 			) {
-				return { ok: false, error: "source 必须是 HTML 页面。" };
+				return { ok: false, error: "source phải là trang HTML." };
 			}
 
 			const html = await readResponseTextWithLimit(
@@ -400,13 +400,13 @@ async function fetchSourceHtml(sourceUrl: URL): Promise<SourceHtmlFetchResult> {
 				WEBMENTION_MAX_HTML_BYTES,
 			);
 			if (html === null) {
-				return { ok: false, error: "source 页面体积过大，已拒绝处理。" };
+				return { ok: false, error: "Trang source có kích thước quá lớn, đã từ chối xử lý." };
 			}
 
 			return { ok: true, html };
 		}
 
-		return { ok: false, error: "source 跳转次数过多，已拒绝处理。" };
+		return { ok: false, error: "Source chuyển hướng quá nhiều lần, đã từ chối xử lý." };
 	} finally {
 		clearTimeout(timeoutId);
 	}
@@ -447,7 +447,7 @@ webmentionRoutes.post("/", async (c) => {
 
 	if (!source || !target) {
 		return c.text(
-			"source 和 target 参数不能为空，且必须是有效的 http/https URL。",
+			"Tham số source và target không được để trống, và phải là URL http/https hợp lệ.",
 			400,
 		);
 	}
@@ -458,11 +458,11 @@ webmentionRoutes.post("/", async (c) => {
 		sourceUrl = new URL(source);
 		targetUrl = new URL(target);
 	} catch {
-		return c.text("source 或 target URL 解析失败。", 400);
+		return c.text("Phân tích URL source hoặc target thất bại.", 400);
 	}
 
 	if (targetUrl.origin !== targetOrigin) {
-		return c.text("target 必须是本站页面。", 400);
+		return c.text("target phải là trang trên trang web này.", 400);
 	}
 
 	const sourceValidationError = validateSourceUrl(sourceUrl);
@@ -472,12 +472,12 @@ webmentionRoutes.post("/", async (c) => {
 
 	const targetPath = normalizePathname(targetUrl.pathname);
 	if (targetPath.startsWith("/api/") || targetPath.startsWith("/admin")) {
-		return c.text("target 不能指向后台或 API 路径。", 400);
+		return c.text("target không được trỏ đến đường dẫn backend hoặc API.", 400);
 	}
 
 	const targetAllowed = await validateTargetPath(c, targetUrl);
 	if (!targetAllowed) {
-		return c.text("target 页面不存在或不在允许接收 Webmention 的范围内。", 400);
+		return c.text("Trang target không tồn tại hoặc không nằm trong phạm vi cho phép nhận Webmention.", 400);
 	}
 
 	const sourceResult = await fetchSourceHtml(sourceUrl);
@@ -487,7 +487,7 @@ webmentionRoutes.post("/", async (c) => {
 	const sourceHtml = sourceResult.html;
 
 	if (!sourceContainsTargetLink(sourceHtml, targetUrl)) {
-		return c.text("source 页面中未找到指向 target 的链接。", 400);
+		return c.text("Không tìm thấy liên kết đến target trong trang source.", 400);
 	}
 
 	const metadata = extractSourceMetadata(sourceHtml);
@@ -525,7 +525,7 @@ webmentionRoutes.post("/", async (c) => {
 			},
 		});
 
-	return c.text("Webmention 已接收，等待审核。", 202);
+	return c.text("Đã nhận Webmention, đang chờ xem xét.", 202);
 });
 
 export { webmentionRoutes };

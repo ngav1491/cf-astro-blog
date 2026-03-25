@@ -10,11 +10,11 @@
 > - 后台与 API 由 `Hono` 跑在 Cloudflare Workers 上
 > - 数据放在 `D1`
 > - 会话和限流放在 `KV`
-> - 媒体文件放在 `R2`
+> - Các tệp phương tiện được đặt trong `R2`
 > - 搜索依赖构建阶段生成的 `Pagefind` 索引
 > - 评论区使用 `Giscus + GitHub Discussions`
 > - 日常代码发布主要依赖 **Cloudflare Dashboard 的 Git 自动构建**
-> - 后台发布文章后如果想让搜索立即更新，可以再接上 **GitHub Actions 自动重建**
+> - Sau khi xuất bản bài viết trong backend, nếu bạn muốn tìm kiếm được cập nhật ngay lập tức, bạn có thể thêm **GitHub Actions tự động xây dựng lại**
 
 如果你是从 B 站或者 GitHub 点进来的，想部署一份自己的同款博客，这份 README 就是给你准备的。
 
@@ -612,7 +612,7 @@ npm run search:index:auto
 | `npm run search:index:local` | 强制读取本地 D1 并生成索引 |
 | `npm run search:index:remote` | 强制读取远端 D1 并生成索引 |
 
-## 后台发文后自动重建：Cloudflare + GitHub Actions 联动
+## Tự động xây dựng lại sau khi xuất bản: Cloudflare + GitHub Actions
 
 这是这个仓库比较容易让人绕晕，但其实也最实用的一段。
 

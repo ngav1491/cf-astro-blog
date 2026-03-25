@@ -51,10 +51,10 @@ function renderTaxonomyRows(options: {
 			<table class="data-table">
 				<thead>
 					<tr>
-						<th>名称</th>
+						<th>Tên</th>
 						<th>Slug</th>
-						<th>关联文章</th>
-						<th>操作</th>
+						<th>Bài viết liên kết</th>
+						<th>Thao tác</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -69,9 +69,9 @@ function renderTaxonomyRows(options: {
 								${
 									item.postCount > 0
 										? `<span class="form-help">${escapeHtml(inUseLabel)}</span>`
-										: `<form method="post" action="${escapeAttribute(deleteActionBuilder(item.id))}" data-confirm-message="${escapeAttribute("确认删除这条历史记录吗？")}">
+										: `<form method="post" action="${escapeAttribute(deleteActionBuilder(item.id))}" data-confirm-message="${escapeAttribute("Bạn có chắc muốn xóa bản ghi lịch sử này không?")}">
 												<input type="hidden" name="_csrf" value="${escapeAttribute(csrfToken)}" />
-												<button type="submit" class="btn btn-sm btn-danger">删除</button>
+												<button type="submit" class="btn btn-sm btn-danger">Xóa</button>
 										</form>`
 								}
 							</td>
@@ -93,8 +93,8 @@ export function postsListPage(
 ): string {
 	const content = `
 		<div class="page-header">
-			<h1>文章</h1>
-			<a href="/api/admin/posts/new" class="btn btn-primary">新建文章</a>
+			<h1>Bài viết</h1>
+			<a href="/api/admin/posts/new" class="btn btn-primary">Tạo bài viết mới</a>
 		</div>
 
 		${alert ? `<div class="alert alert-${escapeAttribute(alert.type)}">${escapeHtml(alert.message)}</div>` : ""}
@@ -104,76 +104,76 @@ export function postsListPage(
 				? `<div class="table-card"><table class="data-table">
 				<thead>
 					<tr>
-						<th>标题</th>
-						<th>分类</th>
-						<th>状态</th>
-						<th>置顶</th>
-						<th>浏览量</th>
-						<th>日期</th>
-						<th>操作</th>
+						<th>Tiêu đề</th>
+						<th>Phân loại</th>
+						<th>Trạng thái</th>
+						<th>Ghim</th>
+						<th>Lượt xem</th>
+						<th>Ngày</th>
+						<th>Thao tác</th>
 					</tr>
 				</thead>
 				<tbody>
-						${posts
-							.map(
-								(post) => `
+					${posts
+						.map(
+							(post) => `
 					<tr>
 						<td>
 							<a href="/api/admin/posts/${post.id}/edit">${escapeHtml(post.title)}</a>
 						</td>
 						<td>${escapeHtml(post.categoryName || "-")}</td>
 						<td><span class="badge badge-${normalizeDisplayStatus(post.status)}">${escapeHtml(getPostStatusLabel(post.status))}</span></td>
-						<td>${post.isPinned ? `置顶 #${post.pinnedOrder}` : "-"}</td>
+						<td>${post.isPinned ? `Ghim #${post.pinnedOrder}` : "-"}</td>
 						<td>${post.viewCount ?? 0}</td>
 						<td>${post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : new Date(post.createdAt).toLocaleDateString()}</td>
 						<td class="table-actions">
-							<a href="/api/admin/posts/${post.id}/edit" class="btn btn-sm">编辑</a>
-							<a href="/blog/${encodeRouteParam(post.slug)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm">查看</a>
+							<a href="/api/admin/posts/${post.id}/edit" class="btn btn-sm">Chỉnh sửa</a>
+							<a href="/blog/${encodeRouteParam(post.slug)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm">Xem</a>
 							${
 								normalizeDisplayStatus(post.status) === "scheduled"
-									? `<form method="post" action="/api/admin/posts/${post.id}/cancel-schedule" data-confirm-message="${escapeAttribute("确认取消这篇文章的定时发布吗？")}">
+									? `<form method="post" action="/api/admin/posts/${post.id}/cancel-schedule" data-confirm-message="${escapeAttribute("Bạn có chắc muốn hủy xuất bản hẹn giờ của bài viết này không?")}">
 										<input type="hidden" name="_csrf" value="${escapeAttribute(csrfToken)}" />
-										<button type="submit" class="btn btn-sm">取消定时</button>
+										<button type="submit" class="btn btn-sm">Hủy hẹn giờ</button>
 								</form>`
 									: ""
 							}
-							<form method="post" action="/api/admin/posts/${post.id}/delete" data-confirm-message="${escapeAttribute("确认删除这篇文章吗？")}">
+							<form method="post" action="/api/admin/posts/${post.id}/delete" data-confirm-message="${escapeAttribute("Bạn có chắc muốn xóa bài viết này không?")}">
 								<input type="hidden" name="_csrf" value="${escapeAttribute(csrfToken)}" />
-								<button type="submit" class="btn btn-sm btn-danger">删除</button>
+								<button type="submit" class="btn btn-sm btn-danger">Xóa</button>
 							</form>
 						</td>
 					</tr>`,
-							)
-							.join("")}
+						)
+						.join("")}
 				</tbody>
 			</table></div>`
-				: '<p class="empty-state">当前还没有文章，<a href="/api/admin/posts/new">立即创建第一篇</a>。</p>'
+				: '<p class="empty-state">Hiện chưa có bài viết nào, <a href="/api/admin/posts/new">tạo bài viết đầu tiên ngay</a>.</p>'
 		}
 
 		<section style="margin-top: 1.25rem;">
-			<h2 style="margin-bottom: 0.7rem;">历史分类管理</h2>
-			<p class="form-help" style="margin-bottom: 0.7rem;">仅可删除未被文章使用的分类。</p>
+			<h2 style="margin-bottom: 0.7rem;">Quản lý phân loại</h2>
+			<p class="form-help" style="margin-bottom: 0.7rem;">Chỉ có thể xóa những phân loại chưa được sử dụng trong bài viết.</p>
 			${renderTaxonomyRows({
 				items: categories,
-				emptyText: "还没有历史分类。",
+				emptyText: "Chưa có phân loại nào.",
 				deleteActionBuilder: (id) => `/api/admin/posts/categories/${id}/delete`,
 				csrfToken,
-				inUseLabel: "有关联文章，无法删除",
+				inUseLabel: "Có bài viết liên kết, không thể xóa",
 			})}
 		</section>
 
 		<section style="margin-top: 1.25rem;">
-			<h2 style="margin-bottom: 0.7rem;">历史标签管理</h2>
-			<p class="form-help" style="margin-bottom: 0.7rem;">仅可删除未被文章使用的标签。</p>
+			<h2 style="margin-bottom: 0.7rem;">Quản lý nhãn</h2>
+			<p class="form-help" style="margin-bottom: 0.7rem;">Chỉ có thể xóa những nhãn chưa được sử dụng trong bài viết.</p>
 			${renderTaxonomyRows({
 				items: tags,
-				emptyText: "还没有历史标签。",
+				emptyText: "Chưa có nhãn nào.",
 				deleteActionBuilder: (id) => `/api/admin/posts/tags/${id}/delete`,
 				csrfToken,
-				inUseLabel: "有关联文章，无法删除",
+				inUseLabel: "Có bài viết liên kết, không thể xóa",
 			})}
 		</section>
 	`;
 
-	return adminLayout("文章", content, { csrfToken });
+	return adminLayout("Bài viết", content, { csrfToken });
 }
