@@ -1,157 +1,157 @@
-# Cloudflare Astro 博客模板
+# Cloudflare Astro Blog Template
 
-这是一个基于 `Astro + Hono + Cloudflare Workers` 的博客模板，带前台页面、后台管理、媒体库、统计、搜索、友链、Webmention、MCP 发帖接口，以及可选的 Giscus 评论区。
+Đây là một template blog dựa trên `Astro + Hono + Cloudflare Workers`, bao gồm trang chính, trang quản trị, thư viện media, thống kê, tìm kiếm, liên kết bạn bè, Webmention, giao diện đăng bài MCP và phần bình luận Giscus tùy chọn.
 
-> 先提前说一句：**这不是一个只要 `npm build` 就能直接上线的纯静态博客**。
+> Trước tiên, xin lưu ý: **Đây không phải là một blog tĩnh chỉ cần `npm build` là có thể deploy được ngay**.
+
+> Cách hoạt động thực tế:
 >
-> 它的实际运行方式是：
->
-> - 前台页面由 `Astro` 渲染
-> - 后台与 API 由 `Hono` 跑在 Cloudflare Workers 上
-> - 数据放在 `D1`
-> - 会话和限流放在 `KV`
-> - Các tệp phương tiện được đặt trong `R2`
-> - 搜索依赖构建阶段生成的 `Pagefind` 索引
-> - 评论区使用 `Giscus + GitHub Discussions`
-> - 日常代码发布主要依赖 **Cloudflare Dashboard 的 Git 自动构建**
-> - Sau khi xuất bản bài viết trong backend, nếu bạn muốn tìm kiếm được cập nhật ngay lập tức, bạn có thể thêm **GitHub Actions tự động xây dựng lại**
+> - Trang chính được render bởi `Astro`
+> - Trang quản trị và API chạy trên `Hono` trong Cloudflare Workers
+> - Dữ liệu được lưu trong `D1`
+> - Phiên làm việc và giới hạn tốc độ trong `KV`
+> - File media trong `R2`
+> - Tìm kiếm phụ thuộc vào chỉ mục `Pagefind` được tạo khi build
+> - Bình luận sử dụng `Giscus + GitHub Discussions`
+> - Phát hành code hàng ngày chủ yếu dựa vào **Cloudflare Dashboard Git auto-build**
+> - Sau khi đăng bài từ trang quản trị, nếu muốn cập nhật tìm kiếm ngay, có thể kết nối thêm **GitHub Actions auto rebuild**
 
-如果你是从 B 站或者 GitHub 点进来的，想部署一份自己的同款博客，这份 README 就是给你准备的。
+Nếu bạn đến từ Bilibili hoặc GitHub và muốn deploy phiên bản blog của riêng mình, file README này là dành cho bạn.
 
-## 目录
+## Mục lục
 
-- [项目一图看懂](#项目一图看懂)
-- [给 AI / 接手维护的人](#给-ai--接手维护的人)
-- [部署前先看：你必须自己改的地方](#部署前先看你必须自己改的地方)
-- [技术栈](#技术栈)
-- [目录结构](#目录结构)
-- [完整部署路线图](#完整部署路线图)
-- [详细部署教程](#详细部署教程)
-- [Pagefind 搜索是怎么工作的](#pagefind-搜索是怎么工作的)
-- [后台发文后自动重建：Cloudflare + GitHub Actions 联动](#后台发文后自动重建cloudflare--github-actions-联动)
-- [Giscus 评论区配置](#giscus-评论区配置)
-- [可选功能配置清单](#可选功能配置清单)
-- [本地开发](#本地开发)
-- [常用命令](#常用命令)
-- [SEO 与订阅](#seo-与订阅)
-- [部署前检查](#部署前检查)
-- [上线后维护速查](#上线后维护速查)
-- [常见问题](#常见问题)
-- [许可证](#许可证)
+- [Tổng quan dự án](#tổng-quan-dự-án)
+- [Dành cho AI / người bảo trì tiếp theo](#dành-cho-ai--người-bảo-trì-tiếp-theo)
+- [Đọc trước khi deploy: Những thứ bạn phải tự thay đổi](#đọc-trước-khi-deploy-những-thứ-bạn-phải-tự-thay-đổi)
+- [Tech stack](#tech-stack)
+- [Cấu trúc thư mục](#cấu-trúc-thư-mục)
+- [Lộ trình deploy đầy đủ](#lộ-trình-deploy-đầy-đủ)
+- [Hướng dẫn deploy chi tiết](#hướng-dẫn-deploy-chi-tiết)
+- [Cách hoạt động của tìm kiếm Pagefind](#cách-hoạt-động-của-tìm-kiếm-pagefind)
+- [Auto rebuild sau khi đăng bài: Cloudflare + GitHub Actions](#auto-rebuild-sau-khi-đăng-bài-cloudflare--github-actions)
+- [Cấu hình bình luận Giscus](#cấu-hình-bình-luận-giscus)
+- [Danh sách cấu hình tính năng tùy chọn](#danh-sách-cấu-hình-tính-năng-tùy-chọn)
+- [Phát triển cục bộ](#phát-triển-cục-bộ)
+- [Các lệnh thường dùng](#các-lệnh-thường-dùng)
+- [SEO và Đăng ký](#seo-và-đăng-ký)
+- [Kiểm tra trước khi deploy](#kiểm-tra-trước-khi-deploy)
+- [Hướng dẫn bảo trì sau khi lên production](#hướng-dẫn-bảo-trì-sau-khi-lên-production)
+- [Câu hỏi thường gặp](#câu-hỏi-thường-gặp)
+- [Giấy phép](#giấy-phép)
 
-## 项目一图看懂
+## Tổng quan dự án
 
-### 1. 平时改代码怎么上线
+### 1. Sửa code thường ngày và deploy như thế nào
 
-```text
-你 push 到 GitHub
+```
+Bạn push lên GitHub
         ↓
-Cloudflare Dashboard 连接仓库后自动构建
+Cloudflare Dashboard tự động build sau khi kết nối repo
         ↓
-执行 npm run build
+Thực thi npm run build
         ↓
-scripts/build-pagefind-index.mjs 生成搜索索引
+scripts/build-pagefind-index.mjs tạo chỉ mục tìm kiếm
         ↓
-astro build 输出 Worker + 静态资源
+astro build xuất Worker + tài nguyên tĩnh
         ↓
-Cloudflare 自动部署上线
+Cloudflare tự động deploy lên production
 ```
 
-### 2. 后台发文章后，为什么还要额外重建
+### 2. Sau khi đăng bài từ trang quản trị, tại sao cần rebuild thêm
 
-```text
-后台发布文章
+```
+Đăng bài từ trang quản trị
     ↓
-D1 里的文章数据已经更新
+Dữ liệu bài viết trong D1 đã được cập nhật
     ↓
-但 Pagefind 搜索索引还是“上一次构建时生成的文件”
+Nhưng chỉ mục tìm kiếm Pagefind vẫn là file được tạo từ lần build trước
     ↓
-所以如果你想让搜索结果立刻包含新文章
+Vì vậy, nếu muốn kết quả tìm kiếm bao gồm bài viết mới ngay
     ↓
-就需要再触发一次构建 / 部署
+Cần trigger thêm một lần build / deploy
 ```
 
-本仓库已经把这条链路准备好了：
+Repo này đã chuẩn bị sẵn luồng này:
 
-```text
-后台发布文章
+```
+Đăng bài từ trang quản trị
     ↓
-src/admin/lib/deploy-hook.ts 触发 webhook
+src/admin/lib/deploy-hook.ts trigger webhook
     ↓
 GitHub Actions workflow: .github/workflows/auto-deploy-from-admin.yml
     ↓
-执行 npm run deploy
+Thực thi npm run deploy
     ↓
-远端 D1 迁移 + 远端 Pagefind 重建 + wrangler deploy
+D1 migration remote + Pagefind rebuild remote + wrangler deploy
 ```
 
-### 3. 评论区怎么来的
+### 3. Bình luận đến từ đâu
 
-```text
-文章页 CommentsPanel
+```
+CommentsPanel trong trang bài viết
     ↓
-public/comments.js 在用户展开评论区时动态加载 giscus
+public/comments.js load giscus động khi người dùng mở bình luận
     ↓
-Giscus 读取 GitHub Discussions
+Giscus đọc GitHub Discussions
 ```
 
-所以评论区不是博客自己存评论，而是借 GitHub Discussions 来做。
+Vì vậy, bình luận không phải do blog lưu trữ, mà sử dụng GitHub Discussions.
 
-## 给 AI / 接手维护的人
+## Dành cho AI / Người bảo trì tiếp theo
 
-如果以后你要让 AI 帮你维护，先看这几个文件最省时间：
+Nếu sau này bạn muốn nhờ AI bảo trì, hãy xem các file này trước để tiết kiệm thời gian:
 
-- `wrangler.jsonc`：Worker 名称、D1 / KV / R2 绑定、站点变量。
-- `.dev.vars.example`：本地开发所需变量模板。
-- `src/lib/types.ts`：站点标题、站点 URL、作者信息、Giscus 评论配置。
-- `scripts/build-pagefind-index.mjs`：Pagefind 索引生成逻辑，会读 D1。
-- `.github/workflows/auto-deploy-from-admin.yml`：后台发文后自动触发 GitHub Actions 部署。
-- `src/admin/lib/deploy-hook.ts`：后台何时触发 webhook。
-- `src/components/CommentsPanel.astro` + `public/comments.js`：评论区加载逻辑。
-- `docs/maintenance-guide.md`：上线后维护规范。
+- `wrangler.jsonc`: Worker name, D1/KV/R2 bindings, biến site.
+- `.dev.vars.example`: Template biến cho phát triển cục bộ.
+- `src/lib/types.ts`: Tiêu đề site, URL site, thông tin tác giả, cấu hình Giscus.
+- `scripts/build-pagefind-index.mjs`: Logic tạo chỉ mục Pagefind, đọc từ D1.
+- `.github/workflows/auto-deploy-from-admin.yml`: GitHub Actions auto deploy sau khi đăng bài.
+- `src/admin/lib/deploy-hook.ts`: Khi nào trigger webhook từ trang quản trị.
+- `src/components/CommentsPanel.astro` + `public/comments.js`: Logic load bình luận.
+- `docs/maintenance-guide.md`: Quy tắc bảo trì sau khi lên production.
 
-## 部署前先看：你必须自己改的地方
+## Đọc trước khi deploy: Những thứ bạn phải tự thay đổi
 
-这个仓库已经带了我自己的站点信息，所以**你 Fork 以后，至少要改下面这些内容**，不然会出现“页面能跑，但是还是我的名字 / 我的评论区 / 我的资源域名”的情况。
+Repo này đã có sẵn thông tin site của tác giả gốc, vì vậy **sau khi Fork, bạn phải thay đổi ít nhất những thứ sau**, nếu không sẽ xuất hiện tình trạng "trang có thể chạy được, nhưng vẫn hiển thị tên/thông tin bình luận/tài nguyên của người khác".
 
-### 1. 先 Fork 仓库
+### 1. Fork repo trước
 
-推荐流程：
+Quy trình khuyến nghị:
 
-1. 先在 GitHub 上 `Fork` 这个仓库到你自己的账号。
-2. 再克隆你自己的 Fork。
-3. 后续 Cloudflare、Giscus、GitHub OAuth、GitHub Actions 都指向你自己的仓库。
+1. Fork repo này vào tài khoản của bạn trên GitHub.
+2. Clone Fork của bạn về máy.
+3. Các cấu hình Cloudflare, Giscus, GitHub OAuth, GitHub Actions đều trỏ đến repo của bạn.
 
-### 2. 必改文件清单
+### 2. Danh sách file bắt buộc phải sửa
 
 #### `src/lib/types.ts`
 
-这里控制：
+File này kiểm soát:
 
-- 博客标题
-- 站点主域名
-- 作者名
-- 站点描述
-- Giscus 评论仓库与分类配置
+- Tiêu đề blog
+- Domain chính của site
+- Tên tác giả
+- Mô tả site
+- Cấu hình repo và category của Giscus
 
-如果你不想立刻启用评论区，**至少把评论配置改成你自己的，或者先清空**，不要继续指向原仓库。
+Nếu không muốn bật bình luận ngay, **ít nhất hãy sửa thành thông tin của bạn, hoặc xóa trắng**, không nên tiếp tục trỏ đến repo gốc.
 
 #### `wrangler.jsonc`
 
-这里控制：
+File này kiểm soát:
 
-- Worker 名称 `name`
-- D1 数据库绑定与 `database_id`
-- KV 命名空间绑定与 `id`
-- R2 bucket 绑定与 `bucket_name`
+- Worker name `name`
+- D1 database binding và `database_id`
+- KV namespace binding và `id`
+- R2 bucket binding và `bucket_name`
 - `SITE_NAME`
 - `SITE_URL`
 
-你不能直接用仓库里现成的资源 ID；那是原站点的配置。
+Bạn không thể dùng trực tiếp resource ID có sẵn trong repo; đó là cấu hình của site gốc.
 
-#### 如果你要换成自己的 Logo / 图床 / 品牌
+#### Nếu muốn đổi Logo / CDN / thương hiệu
 
-至少检查这些文件：
+Kiểm tra ít nhất các file sau:
 
 - `src/components/BaseHead.astro`
 - `src/components/Header.astro`
@@ -160,107 +160,107 @@ Giscus 读取 GitHub Discussions
 - `src/middleware.ts`
 - `src/admin/app.ts`
 
-原因很简单：
+Lý do đơn giản:
 
-- 前 4 个文件里有品牌文案、图标、页脚信息
-- 后 2 个文件里有 CSP 白名单；如果你把 Logo 外链域名换了，CSP 也得一起改
+- 4 file đầu có thông tin thương hiệu, icon, footer
+- 2 file sau có CSP whitelist; nếu đổi domain CDN cho ảnh, CSP cũng phải sửa theo
 
-### 3. 最省事的排查命令
+### 3. Lệnh kiểm tra nhanh nhất
 
-把下面这条命令跑一遍，能快速找出仓库里还残留的原站点信息：
+Chạy lệnh sau để nhanh chóng tìm các thông tin còn lại của site gốc trong repo:
 
 ```bash
 rg -n "Eric-Terminal|ericterminal\.com|assets\.ericterminal\.com|萌ICP备|R_kgD|DIC_" src public README.md wrangler.jsonc
 ```
 
-## 技术栈
+## Tech stack
 
-| 分层 | 技术 |
+| Layer | Công nghệ |
 | --- | --- |
-| 前台页面 | `Astro` |
-| 后台与接口 | `Hono` |
-| 数据库 | `Cloudflare D1` + `Drizzle ORM` |
-| 会话与限流 | `Cloudflare KV` |
-| 媒体文件 | `Cloudflare R2` |
-| 运行时 | `Cloudflare Workers` |
-| 搜索 | `Pagefind` |
-| 评论 | `Giscus` + `GitHub Discussions` |
-| 检查与格式化 | `Biome` |
-| 测试 | `tsx + node:test` |
+| Trang chính | `Astro` |
+| Trang quản trị & API | `Hono` |
+| Database | `Cloudflare D1` + `Drizzle ORM` |
+| Phiên & Giới hạn tốc độ | `Cloudflare KV` |
+| File media | `Cloudflare R2` |
+| Runtime | `Cloudflare Workers` |
+| Tìm kiếm | `Pagefind` |
+| Bình luận | `Giscus` + `GitHub Discussions` |
+| Kiểm tra & Format | `Biome` |
+| Test | `tsx + node:test` |
 
-## 目录结构
+## Cấu trúc thư mục
 
-```text
+```
 src/
-├── admin/                  # 后台子应用、认证中间件和 HTML 模板
-├── components/             # 前台组件（含评论区、搜索等）
+├── admin/                  # Sub-app trang quản trị, middleware auth và template HTML
+├── components/             # Components trang chính (bình luận, tìm kiếm...)
 ├── db/                     # Drizzle schema
-├── layouts/                # 公共布局
-├── lib/                    # 安全工具、数据库访问、站点配置与共享类型
-├── pages/                  # Astro 页面与 API 入口
-└── styles/                 # 全局样式
+├── layouts/                # Layout chung
+├── lib/                    # Công cụ bảo mật, truy cập DB, cấu hình site và type chia sẻ
+├── pages/                  # Astro pages và entry API
+└── styles/                 # Style toàn cục
 public/
-├── admin.js                # 后台交互脚本
-├── comments.js             # Giscus 动态加载脚本
-├── pagefind-search.js      # 搜索页前端逻辑
-└── pagefind/               # Pagefind 构建产物
+├── admin.js                # Script tương tác trang quản trị
+├── comments.js             # Script load Giscus động
+├── pagefind-search.js      # Logic tìm kiếm trang chính
+└── pagefind/               # Kết quả build Pagefind
 scripts/
-├── build-pagefind-index.mjs # 从 D1 生成 Pagefind 索引
-├── hash-password.mjs        # 生成后台密码哈希（旧兼容用途）
-└── seed.sql                 # 示例数据
+├── build-pagefind-index.mjs # Tạo chỉ mục Pagefind từ D1
+├── hash-password.mjs        # Tạo hash mật khẩu trang quản trị (tương thích cũ)
+└── seed.sql                 # Dữ liệu mẫu
 .github/workflows/
-└── auto-deploy-from-admin.yml # 后台触发的自动部署工作流
+└── auto-deploy-from-admin.yml # Workflow auto deploy được trigger từ trang quản trị
 docs/
-└── maintenance-guide.md     # 上线后维护指南
+└── maintenance-guide.md     # Hướng dẫn bảo trì sau khi lên production
 tests/
 ├── integration/
 └── unit/
 ```
 
-## 完整部署路线图
+## Lộ trình deploy đầy đủ
 
-如果你只想先知道全流程，大概就是这 9 步：
+Nếu chỉ muốn biết toàn bộ quy trình, đại khái là 9 bước:
 
-1. Fork 仓库，改成你自己的站点信息。
-2. 在 Cloudflare 创建 D1 / KV / R2 资源。
-3. 修改 `wrangler.jsonc`，填入你自己的资源 ID 和站点域名。
-4. 在 GitHub 创建 OAuth App，给后台登录用。
-5. 在 Cloudflare Dashboard 里连接 GitHub 仓库，开启自动构建。
-6. 在 Cloudflare 项目里配置 Variables 和 Secrets。
-7. 首次执行一次远端数据库迁移：`npm run db:migrate:remote`。
-8. 上线后手动验证：首页、归档、后台登录、发文、搜索、媒体上传。
-9. 如果你希望“后台一发布文章，搜索就立刻更新”，再配置 GitHub Actions 自动重建。
+1. Fork repo, sửa thông tin site của bạn.
+2. Tạo tài nguyên D1/KV/R2 trên Cloudflare.
+3. Sửa `wrangler.jsonc`, điền resource ID và domain của bạn.
+4. Tạo OAuth App trên GitHub để đăng nhập trang quản trị.
+5. Kết nối GitHub repo trên Cloudflare Dashboard, bật auto build.
+6. Cấu hình Variables và Secrets trong Cloudflare project.
+7. Lần đầu lên production, thực hiện D1 migration remote: `npm run db:migrate:remote`.
+8. Sau khi lên production, tự kiểm tra thủ công: trang chính, lưu trữ, đăng nhập quản trị, đăng bài, tìm kiếm, upload media.
+9. Nếu muốn "đăng bài từ trang quản trị xong, tìm kiếm cập nhật ngay", cấu hình thêm GitHub Actions auto rebuild.
 
-下面是完整细节版。
+Chi tiết bên dưới.
 
-## 详细部署教程
+## Hướng dẫn deploy chi tiết
 
-### 第 0 步：准备账号
+### Bước 0: Chuẩn bị tài khoản
 
-你至少需要：
+Bạn cần ít nhất:
 
-- 一个 GitHub 账号
-- 一个 Cloudflare 账号
-- 一个你自己拥有的仓库（Fork 也行）
+- Một tài khoản GitHub
+- Một tài khoản Cloudflare
+- Một repo của riêng bạn (Fork cũng được)
 
-可选但很推荐：
+Tùy chọn nhưng khuyến nghị:
 
-- 一个自定义域名
-- 一个你自己的 Logo / 头像 / 品牌图片
+- Một domain tùy chỉnh
+- Logo/avatar/ảnh thương hiệu của riêng bạn
 
-### 第 1 步：Fork 仓库并改基础信息
+### Bước 1: Fork repo và sửa thông tin cơ bản
 
-先克隆你自己的 Fork：
+Clone Fork của bạn về:
 
 ```bash
-git clone https://github.com/你的用户名/cf-astro-blog.git
+git clone https://github.com/TÊN-USER/cf-astro-blog.git
 cd cf-astro-blog
 npm install
 ```
 
-#### 1.1 先改 `src/lib/types.ts`
+#### 1.1 Sửa `src/lib/types.ts` trước
 
-你至少要把下面这些值改掉：
+Ít nhất phải sửa các giá trị sau:
 
 - `name`
 - `url`
@@ -271,7 +271,7 @@ npm install
 - `comments.category`
 - `comments.categoryId`
 
-如果你还没配置 Giscus，可以先保留：
+Nếu chưa cấu hình Giscus, có thể giữ nguyên:
 
 - `provider: "giscus"`
 - `mapping: "pathname"`
@@ -280,37 +280,37 @@ npm install
 - `inputPosition: "top"`
 - `lang: "zh-CN"`
 
-但 `repo / repoId / category / categoryId` 不要继续沿用原仓库。
+Nhưng `repo / repoId / category / categoryId` không nên dùng tiếp của repo gốc.
 
-#### 1.2 如果你要换品牌，再改这些地方
+#### 1.2 Nếu muốn đổi thương hiệu, sửa thêm những file này
 
-- 页头 Logo / favicon：`src/components/BaseHead.astro`、`src/components/Header.astro`
-- 后台登录页品牌信息：`src/admin/views/login.ts`
-- 页脚备案和版权：`src/components/Footer.astro`
-- 默认作者名 / 侧边栏默认文案：`src/lib/site-appearance.ts`、`src/db/schema.ts`
+- Logo/favicon ở header: `src/components/BaseHead.astro`, `src/components/Header.astro`
+- Thông tin thương hiệu trang đăng nhập: `src/admin/views/login.ts`
+- Beian và bản quyền footer: `src/components/Footer.astro`
+- Tên tác giả mặc định / sidebar mặc định: `src/lib/site-appearance.ts`, `src/db/schema.ts`
 
-#### 1.3 如果你用了新的外链图片域名，别忘了改 CSP
+#### 1.3 Nếu dùng domain ảnh CDN mới, nhớ sửa CSP
 
-如果你不再使用 `assets.ericterminal.com`，而是改成你自己的图床域名，还需要同步改：
+Nếu không dùng `assets.ericterminal.com` nữa mà đổi sang domain CDN của bạn, cần sửa thêm:
 
 - `src/middleware.ts`
 - `src/admin/app.ts`
 
-否则浏览器可能会把图片拦下来。
+Nếu không trình duyệt sẽ chặn ảnh.
 
-### 第 2 步：创建 Cloudflare 资源
+### Bước 2: Tạo tài nguyên Cloudflare
 
-这个项目运行至少依赖下面 3 个资源：
+Project này cần ít nhất 3 tài nguyên sau để chạy:
 
-| 资源 | 绑定名 | 是否必须 | 用途 |
+| Tài nguyên | Binding | Bắt buộc | Mục đích |
 | --- | --- | --- | --- |
-| D1 | `DB` | 是 | 文章、分类、标签、统计、友链、Webmention、外观配置 |
-| KV | `SESSION` | 是 | 后台会话、登录限流、MCP 限流 |
-| R2 | `MEDIA_BUCKET` | 强烈推荐 | 媒体管理与文章图片 |
+| D1 | `DB` | Có | Bài viết, phân loại, thẻ, thống kê, liên kết bạn bè, Webmention, cấu hình giao diện |
+| KV | `SESSION` | Có | Phiên quản trị, giới hạn đăng nhập, giới hạn MCP |
+| R2 | `MEDIA_BUCKET` | Khuyến nghị mạnh | Quản lý media và ảnh bài viết |
 
-你可以用 Cloudflare Dashboard 创建，也可以直接用 Wrangler CLI。
+Có thể tạo bằng Cloudflare Dashboard hoặc Wrangler CLI.
 
-#### 2.1 用 Wrangler CLI 创建（可选）
+#### 2.1 Tạo bằng Wrangler CLI (tùy chọn)
 
 ```bash
 npx wrangler d1 create blog
@@ -318,225 +318,225 @@ npx wrangler kv namespace create SESSION
 npx wrangler r2 bucket create blog-media
 ```
 
-创建完成后，Wrangler 会回显资源 ID / bucket 名称。
+Sau khi tạo xong, Wrangler sẽ hiển thị resource ID / bucket name.
 
-#### 2.2 把资源写进 `wrangler.jsonc`
+#### 2.2 Ghi resource vào `wrangler.jsonc`
 
-你需要至少改成你自己的版本：
+Cần ít nhất sửa thành phiên bản của bạn:
 
 ```jsonc
 {
-  "name": "你的-worker-名称",
+  "name": "tên-worker-của-bạn",
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "你的-d1-名称",
-      "database_id": "你的-d1-id",
+      "database_name": "tên-d1-của-bạn",
+      "database_id": "d1-id-của-bạn",
       "migrations_dir": "drizzle"
     }
   ],
   "r2_buckets": [
     {
       "binding": "MEDIA_BUCKET",
-      "bucket_name": "你的-r2-bucket"
+      "bucket_name": "r2-bucket-của-bạn"
     }
   ],
   "kv_namespaces": [
     {
       "binding": "SESSION",
-      "id": "你的-kv-id"
+      "id": "kv-id-của-bạn"
     }
   ],
   "vars": {
-    "SITE_NAME": "你的博客名",
-    "SITE_URL": "https://你的域名"
+    "SITE_NAME": "Tên blog-của-bạn",
+    "SITE_URL": "https://domain-của-bạn"
   }
 }
 ```
 
-#### 2.3 `name` 一定要唯一
+#### 2.3 `name` phải là duy nhất
 
-`wrangler.jsonc` 里的 `name` 是 Worker 名称。
+`name` trong `wrangler.jsonc` là Worker name.
 
-- 不要直接沿用 `cf-astro-blog`
-- 改成你自己的唯一名字
-- Cloudflare Dashboard 里连接 Git 仓库时，项目名 / Worker 名也最好和这里保持一致
+- Không nên dùng trực tiếp `cf-astro-blog`
+- Đổi thành tên duy nhất của bạn
+- Khi kết nối Git repo trên Cloudflare Dashboard, project name / Worker name nên giữ nhất quán với đây
 
-### 第 3 步：准备本地开发变量
+### Bước 3: Chuẩn bị biến phát triển cục bộ
 
-复制一份本地变量模板：
+Copy template biến cục bộ:
 
 ```bash
 cp .dev.vars.example .dev.vars
 ```
 
-然后按需填写。
+Sau đó điền theo nhu cầu.
 
-本地最常用的几个变量是：
+Các biến thường dùng nhất:
 
-| 名称 | 是否必填 | 说明 |
+| Tên | Bắt buộc | Mô tả |
 | --- | --- | --- |
-| `JWT_SECRET` | 是 | 后台会话签名密钥 |
-| `ADMIN_GITHUB_LOGIN` | 是 | 允许登录后台的 GitHub 用户名 |
-| `GITHUB_OAUTH_CLIENT_ID` | 是 | GitHub OAuth App Client ID |
-| `GITHUB_OAUTH_CLIENT_SECRET` | 是 | GitHub OAuth App Client Secret |
-| `MCP_BEARER_TOKEN` | 可选 | `/api/mcp` Bearer 鉴权令牌 |
-| `TURNSTILE_SECRET_KEY` | 可选 | 开启 Turnstile 时需要 |
-| `AUTO_DEPLOY_WEBHOOK_URL` | 可选 | 后台发文后自动触发外部部署 |
-| `AUTO_DEPLOY_WEBHOOK_SECRET` | 可选 | 部署钩子鉴权令牌 |
+| `JWT_SECRET` | Có | Khóa ký phiên quản trị |
+| `ADMIN_GITHUB_LOGIN` | Có | Username GitHub được phép đăng nhập quản trị |
+| `GITHUB_OAUTH_CLIENT_ID` | Có | GitHub OAuth App Client ID |
+| `GITHUB_OAUTH_CLIENT_SECRET` | Có | GitHub OAuth App Client Secret |
+| `MCP_BEARER_TOKEN` | Tùy chọn | Bearer token cho `/api/mcp` |
+| `TURNSTILE_SECRET_KEY` | Tùy chọn | Cần khi bật Turnstile |
+| `AUTO_DEPLOY_WEBHOOK_URL` | Tùy chọn | Trigger auto deploy từ trang quản trị sau khi đăng bài |
+| `AUTO_DEPLOY_WEBHOOK_SECRET` | Tùy chọn | Token xác thực deploy hook |
 
-### 第 4 步：配置 GitHub OAuth（后台登录必做）
+### Bước 4: Cấu hình GitHub OAuth (bắt buộc để đăng nhập quản trị)
 
-这个后台已经切到 **GitHub OAuth 登录**，不是用户名密码登录了。
+Trang quản trị đã chuyển sang **GitHub OAuth login**, không phải đăng nhập bằng username/password.
 
-也就是说：**如果你不配置 GitHub OAuth，后台基本等于进不去。**
+Nghĩa là: **Nếu không cấu hình GitHub OAuth, về cơ bản không thể vào được trang quản trị.**
 
-#### 4.1 在 GitHub 创建 OAuth App
+#### 4.1 Tạo OAuth App trên GitHub
 
-进入：
+Truy cập:
 
 `GitHub -> Settings -> Developer settings -> OAuth Apps -> New OAuth App`
 
-推荐这样填：
+Khuyến nghị điền như sau:
 
-- `Application name`：随便取，比如 `my-blog-admin`
-- `Homepage URL`：`https://你的域名`
-- `Authorization callback URL`：`https://你的域名/api/auth/github/callback`
+- `Application name`: Tùy ý, ví dụ `my-blog-admin`
+- `Homepage URL`: `https://domain-của-bạn`
+- `Authorization callback URL`: `https://domain-của-bạn/api/auth/github/callback`
 
-创建后你会拿到：
+Sau khi tạo sẽ có:
 
 - `Client ID`
 - `Client Secret`
 
-#### 4.2 回填到 Cloudflare / 本地环境
+#### 4.2 Điền vào Cloudflare / môi trường cục bộ
 
-你至少需要：
+Cần ít nhất:
 
-- `ADMIN_GITHUB_LOGIN=你的 GitHub 用户名`
+- `ADMIN_GITHUB_LOGIN=TÊN-USER-GITHUB-CỦA-BẠN`
 - `GITHUB_OAUTH_CLIENT_ID=...`
 - `GITHUB_OAUTH_CLIENT_SECRET=...`
 
-可选：
+Tùy chọn:
 
-- `GITHUB_OAUTH_REDIRECT_URI=https://你的域名/api/auth/github/callback`
+- `GITHUB_OAUTH_REDIRECT_URI=https://domain-của-bạn/api/auth/github/callback`
 
-如果不填 `GITHUB_OAUTH_REDIRECT_URI`，代码会按当前请求域名自动推导回调地址。
+Nếu không điền `GITHUB_OAUTH_REDIRECT_URI`, code sẽ tự suy ra callback URL theo domain hiện tại.
 
-### 第 5 步：连接 Cloudflare Dashboard 的 Git 自动部署（推荐）
+### Bước 5: Kết nối Cloudflare Dashboard Git auto deploy (khuyến nghị)
 
-这一步是日常发布的主线路。
+Đây là luồng chính để phát hành hàng ngày.
 
-也就是：**你以后正常改代码、提交、push，Cloudflare 会自动构建并上线。**
+Nghĩa là: **Sau này, sửa code bình thường, commit, push, Cloudflare sẽ tự động build và deploy.**
 
-#### 5.1 连接仓库
+#### 5.1 Kết nối repo
 
-大致流程：
+Quy trình đại khái:
 
-1. 进入 Cloudflare Dashboard。
-2. 打开 `Workers & Pages`。
-3. 选择创建新项目并连接 GitHub 仓库。
-4. 选中你自己的 Fork 仓库。
-5. 生产分支一般选 `main`。
+1. Vào Cloudflare Dashboard.
+2. Mở `Workers & Pages`.
+3. Chọn tạo project mới và kết nối GitHub repo.
+4. Chọn Fork của bạn.
+5. Branch sản phẩm thường chọn `main`.
 
-#### 5.2 构建配置建议
+#### 5.2 Cấu hình build khuyến nghị
 
-推荐按下面思路配：
+Đề xuất cấu hình như sau:
 
-- Root Directory：仓库根目录
-- Build Command：`npm run build`
-- Deploy Command：`npx wrangler deploy`
-- Production Branch：`main`
+- Root Directory: Thư mục gốc repo
+- Build Command: `npm run build`
+- Deploy Command: `npx wrangler deploy`
+- Production Branch: `main`
 
-这个仓库的 `npm run build` 实际会做两件事：
+Repo này `npm run build` thực tế làm 2 việc:
 
-1. 先跑 `scripts/build-pagefind-index.mjs` 生成搜索索引
-2. 再跑 `astro build`
+1. Chạy `scripts/build-pagefind-index.mjs` trước để tạo chỉ mục tìm kiếm
+2. Sau đó chạy `astro build`
 
-所以**不要把 Build Command 改成单纯的 `astro build`**，不然搜索索引可能不同步。
+Vì vậy **không nên đổi Build Command thành `astro build` đơn thuần**, nếu không chỉ mục tìm kiếm có thể không đồng bộ.
 
-#### 5.3 Preview / 非生产分支构建
+#### 5.3 Preview / Build branch khác production
 
-如果你希望分支或 PR 也自动出预览，可以在 Cloudflare 的分支构建设置里开启非生产分支构建。
+Nếu muốn branch hoặc PR cũng auto build preview, có thể bật trong cấu hình branch build của Cloudflare.
 
-这样：
+Như vậy:
 
-- `main` push -> 生产环境构建
-- 其他分支 push -> 预览环境构建
+- `main` push -> Build production
+- Branch khác push -> Build preview
 
-### 第 6 步：在 Cloudflare 项目里配置 Variables 和 Secrets
+### Bước 6: Cấu hình Variables và Secrets trong Cloudflare project
 
-进入你的 Cloudflare 项目后，在运行时环境里配置变量。
+Vào Cloudflare project, cấu hình biến trong runtime environment.
 
-建议 `Production` 和 `Preview` 都配一份，至少核心变量别缺。
+Khuyến nghị cấu hình cả Production và Preview, ít nhất các biến cốt lõi không được thiếu.
 
-#### 6.1 必填项
+#### 6.1 Bắt buộc
 
-| 名称 | 类型 | 说明 |
+| Tên | Loại | Mô tả |
 | --- | --- | --- |
-| `JWT_SECRET` | Secret | 后台会话签名密钥 |
-| `ADMIN_GITHUB_LOGIN` | Variable | 允许登录后台的 GitHub 用户名 |
+| `JWT_SECRET` | Secret | Khóa ký phiên quản trị |
+| `ADMIN_GITHUB_LOGIN` | Variable | Username GitHub được phép đăng nhập |
 | `GITHUB_OAUTH_CLIENT_ID` | Variable | GitHub OAuth Client ID |
 | `GITHUB_OAUTH_CLIENT_SECRET` | Secret | GitHub OAuth Client Secret |
-| `SITE_NAME` | Variable | 站点名称 |
-| `SITE_URL` | Variable | 站点主域名 |
+| `SITE_NAME` | Variable | Tên site |
+| `SITE_URL` | Variable | Domain chính của site |
 
-#### 6.2 强烈建议配置
+#### 6.2 Khuyến nghị cấu hình
 
-| 名称 | 类型 | 说明 |
+| Tên | Loại | Mô tả |
 | --- | --- | --- |
-| `TURNSTILE_SITE_KEY` | Variable | 登录页 / 友链申请页验证码站点 Key |
-| `TURNSTILE_SECRET_KEY` | Secret | 验证码服务端密钥 |
-| `MCP_BEARER_TOKEN` | Secret | `/api/mcp` 的 Bearer 鉴权令牌 |
+| `TURNSTILE_SITE_KEY` | Variable | Site Key cho trang đăng nhập / form liên kết bạn bè |
+| `TURNSTILE_SECRET_KEY` | Secret | Server key xác minh |
+| `MCP_BEARER_TOKEN` | Secret | Bearer token cho `/api/mcp` |
 
-#### 6.3 可选项
+#### 6.3 Tùy chọn
 
-| 名称 | 类型 | 说明 |
+| Tên | Loại | Mô tả |
 | --- | --- | --- |
-| `GITHUB_OAUTH_REDIRECT_URI` | Variable | 自定义 OAuth 回调地址 |
-| `AUTO_DEPLOY_WEBHOOK_URL` | Variable | 后台发文后自动触发构建 |
-| `AUTO_DEPLOY_WEBHOOK_SECRET` | Secret | 部署钩子鉴权令牌 |
-| `AUTO_DEPLOY_GITHUB_EVENT_TYPE` | Variable | GitHub dispatch 事件名，默认 `rebuild-search-index` |
-| `MCP_RATE_LIMIT_PER_MINUTE` | Variable | MCP 每分钟每 IP 限流 |
-| `MCP_AUTH_FAIL_LIMIT_PER_MINUTE` | Variable | MCP 鉴权失败阈值 |
-| `MCP_AUTH_BLOCK_SECONDS` | Variable | MCP 临时封禁秒数 |
-| `AI_INTERNAL_API_KEY` | Secret / Variable | 后台 AI 能力用 |
-| `AI_PUBLIC_API_KEY` | Secret / Variable | 前台公开 AI 功能用 |
-| `PUBLIC_AI_RATE_LIMIT_PER_MINUTE` | Variable | 公开 AI 每分钟每 IP 限流 |
-| `PUBLIC_AI_DAILY_LIMIT_PER_IP` | Variable | 公开 AI 每日每 IP 限额 |
+| `GITHUB_OAUTH_REDIRECT_URI` | Variable | OAuth callback URL tùy chỉnh |
+| `AUTO_DEPLOY_WEBHOOK_URL` | Variable | Trigger auto build sau khi đăng bài |
+| `AUTO_DEPLOY_WEBHOOK_SECRET` | Secret | Token xác thực deploy hook |
+| `AUTO_DEPLOY_GITHUB_EVENT_TYPE` | Variable | Tên dispatch event GitHub, mặc định `rebuild-search-index` |
+| `MCP_RATE_LIMIT_PER_MINUTE` | Variable | Giới hạn MCP mỗi phút mỗi IP |
+| `MCP_AUTH_FAIL_LIMIT_PER_MINUTE` | Variable | Ngưỡng thất bại xác thực MCP |
+| `MCP_AUTH_BLOCK_SECONDS` | Variable | Thời gian block tạm thời MCP (giây) |
+| `AI_INTERNAL_API_KEY` | Secret / Variable | AI cho trang quản trị |
+| `AI_PUBLIC_API_KEY` | Secret / Variable | AI công khai cho trang chính |
+| `PUBLIC_AI_RATE_LIMIT_PER_MINUTE` | Variable | Giới hạn AI công khai mỗi phút mỗi IP |
+| `PUBLIC_AI_DAILY_LIMIT_PER_IP` | Variable | Giới hạn hàng ngày AI công khai mỗi IP |
 
-#### 6.4 资源绑定也别漏
+#### 6.4 Đừng quên resource bindings
 
-除了变量，还要确认 Cloudflare 项目本身已经绑定：
+Ngoài biến, còn cần xác nhận Cloudflare project đã bind:
 
-- `DB`（D1）
-- `SESSION`（KV）
-- `MEDIA_BUCKET`（R2）
+- `DB` (D1)
+- `SESSION` (KV)
+- `MEDIA_BUCKET` (R2)
 
-### 第 7 步：首次执行远端数据库迁移（一定要做）
+### Bước 7: Lần đầu lên production, nhất định phải thực hiện D1 migration remote
 
-这一条非常重要。
+Điều này rất quan trọng.
 
-**Cloudflare 自动构建会帮你部署代码，但不会自动替你初始化 D1 表结构。**
+**Cloudflare auto build sẽ giúp deploy code, nhưng sẽ không tự khởi tạo cấu trúc bảng D1.**
 
-所以第一次上线前，至少要手动执行一次：
+Vì vậy, trước lần đầu lên production, ít nhất phải thực hiện:
 
 ```bash
 npm run db:migrate:remote
 ```
 
-如果你本地还没登录 Wrangler，先登录：
+Nếu chưa login Wrangler, login trước:
 
 ```bash
 npx wrangler login
 ```
 
-> 以后只要 `drizzle/` 里新增了 migration，也要再跑一次 `npm run db:migrate:remote`。
+> Sau này, chỉ cần thêm migration mới trong `drizzle/`, thì cũng phải chạy `npm run db:migrate:remote`.
 >
-> 如果只是改前端样式、页面文案、接口逻辑，但**没改数据库结构**，那正常 `push` 让 Cloudflare 自动构建就够了。
+> Nếu chỉ sửa UI, văn bản, logic API mà **không thay đổi cấu trúc database**, thì bình thường `push` là Cloudflare auto deploy.
 
-### 第 8 步：本地先跑起来（非常推荐）
+### Bước 8: Chạy thử cục bộ trước (rất khuyến nghị)
 
-推荐先本地确认一遍：
+Khuyến nghị kiểm tra cục bộ trước:
 
 ```bash
 npm install
@@ -545,198 +545,198 @@ npm run db:migrate:local
 npm run dev
 ```
 
-如果你想给本地 D1 塞一点示例数据，也可以：
+Nếu muốn insert dữ liệu mẫu vào D1 cục bộ:
 
 ```bash
 npm run db:seed:local
 ```
 
-然后重点看看：
+Sau đó kiểm tra những điểm quan trọng:
 
-- 首页和归档页能否正常打开
-- 搜索页有没有索引
-- 后台登录页是否显示 GitHub 登录按钮
-- 新建文章能否保存
-- 图片上传是否正常
+- Trang chính và trang lưu trữ có hiển thị bình thường không
+- Trang tìm kiếm có chỉ mục không
+- Trang đăng nhập quản trị có hiển thị nút đăng nhập GitHub không
+- Tạo bài viết mới có lưu được không
+- Upload ảnh có bình thường không
 
-### 第 9 步：首次上线后建议验证这几件事
+### Bước 9: Sau khi lên production lần đầu, kiểm tra những việc sau
 
-上线后请按这个顺序自测：
+Sau khi lên production, tự kiểm tra theo thứ tự:
 
-1. 首页是否正常显示
-2. `/blog` 归档页是否正常
-3. `/search` 搜索页是否能查到文章
-4. `/api/auth/login` 是否能用 GitHub OAuth 登录后台
-5. 后台新建一篇文章并发布
-6. 如果启用了 R2，测试上传图片
-7. 打开一篇文章，看评论区是否是你的 Giscus 配置
+1. Trang chính có hiển thị bình thường không
+2. Trang `/blog` có hoạt động bình thường không
+3. Trang `/search` có thể tìm kiếm được bài viết không
+4. `/api/auth/login` có thể đăng nhập quản trị qua GitHub OAuth không
+5. Tạo bài viết mới và publish từ trang quản trị
+6. Nếu bật R2, test upload ảnh
+7. Mở một bài viết, xem bình luận có phải là cấu hình Giscus của bạn không
 
-## Pagefind 搜索是怎么工作的
+## Cách hoạt động của tìm kiếm Pagefind
 
-这个项目的搜索不是实时查数据库，而是构建时生成静态索引。
+Tìm kiếm trong project này không truy vấn database real-time, mà tạo chỉ mục tĩnh khi build.
 
-### 关键文件
+### File quan trọng
 
-- 索引脚本：`scripts/build-pagefind-index.mjs`
-- 索引输出目录：`public/pagefind/`
-- 元数据文件：`public/pagefind-meta.json`
-- 前端搜索逻辑：`public/pagefind-search.js`
+- Script tạo chỉ mục: `scripts/build-pagefind-index.mjs`
+- Thư mục output chỉ mục: `public/pagefind/`
+- File metadata: `public/pagefind-meta.json`
+- Logic tìm kiếm frontend: `public/pagefind-search.js`
 
-### 构建逻辑
+### Logic build
 
-`npm run build` 会默认先执行：
+`npm run build` sẽ thực thi mặc định:
 
 ```bash
 npm run search:index:auto
 ```
 
-也就是：
+Nghĩa là:
 
-1. 优先读本地 D1
-2. 如果本地没文章，就自动回退远端 D1
-3. 根据公开文章生成 Pagefind 索引
-4. 再执行 `astro build`
+1. Ưu tiên đọc D1 cục bộ
+2. Nếu D1 cục bộ không có bài viết, tự động fallback D1 remote
+3. Tạo chỉ mục Pagefind theo bài viết public
+4. Sau đó thực thi `astro build`
 
-### 你需要记住的重点
+### Điều cần nhớ
 
-- **搜索结果来自构建产物，不是实时数据库查询。**
-- 后台发布文章后，文章页会立刻能访问；但搜索结果是否马上更新，取决于你有没有重新构建。
-- 如果你配置了“后台发文 -> GitHub Actions 自动部署”，搜索会自动跟上。
-- 如果你没配，那就等你下次手动 `push` 或手动部署时再更新。
+- **Kết quả tìm kiếm đến từ kết quả build, không phải truy vấn database real-time.**
+- Sau khi đăng bài từ trang quản trị, trang bài viết có thể truy cập ngay; nhưng kết quả tìm kiếm có cập nhật ngay hay không, phụ thuộc vào việc có rebuild hay không.
+- Nếu cấu hình "đăng bài từ quản trị -> GitHub Actions auto deploy", tìm kiếm sẽ tự động cập nhật.
+- Nếu không cấu hình, thì đợi lần `push` hoặc deploy thủ công tiếp theo.
 
-### 相关命令
+### Lệnh liên quan
 
-| 命令 | 说明 |
+| Lệnh | Mô tả |
 | --- | --- |
-| `npm run search:index:auto` | 优先读取本地 D1，若为空自动回退远端 D1 |
-| `npm run search:index:local` | 强制读取本地 D1 并生成索引 |
-| `npm run search:index:remote` | 强制读取远端 D1 并生成索引 |
+| `npm run search:index:auto` | Ưu tiên đọc D1 cục bộ, nếu rỗng tự động fallback D1 remote |
+| `npm run search:index:local` | Cưỡng ép đọc D1 cục bộ và tạo chỉ mục |
+| `npm run search:index:remote` | Cưỡng ép đọc D1 remote và tạo chỉ mục |
 
-## Tự động xây dựng lại sau khi xuất bản: Cloudflare + GitHub Actions
+## Auto rebuild sau khi đăng bài: Cloudflare + GitHub Actions
 
-这是这个仓库比较容易让人绕晕，但其实也最实用的一段。
+Đây là phần dễ gây nhầm lẫn nhất nhưng cũng hữu ích nhất.
 
-### 先理解一下职责分工
+### Trước tiên hiểu phân công trách nhiệm
 
-#### 平时改代码
+#### Sửa code thường ngày
 
-- 你 `push`
-- Cloudflare Dashboard 自动构建和部署
+- Bạn `push`
+- Cloudflare Dashboard auto build và deploy
 
-#### 后台发布文章
+#### Đăng bài từ trang quản trị
 
-- 后台先把文章写入 D1
-- 然后通过 `AUTO_DEPLOY_WEBHOOK_URL` 去触发外部构建
-- 本仓库默认推荐触发 GitHub `repository_dispatch`
-- GitHub Actions 再执行 `npm run deploy`
+- Trang quản trị ghi bài viết vào D1 trước
+- Sau đó trigger external build qua `AUTO_DEPLOY_WEBHOOK_URL`
+- Repo này khuyến nghị trigger GitHub `repository_dispatch`
+- GitHub Actions thực thi `npm run deploy`
 
-### 仓库里已经带好的文件
+### File đã chuẩn bị sẵn trong repo
 
-- webhook 触发逻辑：`src/admin/lib/deploy-hook.ts`
-- GitHub Actions 工作流：`.github/workflows/auto-deploy-from-admin.yml`
+- Logic trigger webhook: `src/admin/lib/deploy-hook.ts`
+- GitHub Actions workflow: `.github/workflows/auto-deploy-from-admin.yml`
 
-### 你要配置什么
+### Bạn cần cấu hình gì
 
-#### 1. Cloudflare 运行时变量
+#### 1. Biến Cloudflare runtime
 
-```text
+```
 AUTO_DEPLOY_WEBHOOK_URL=https://api.github.com/repos/<owner>/<repo>/dispatches
-AUTO_DEPLOY_WEBHOOK_SECRET=<一个能调用该仓库 dispatch API 的 GitHub Token>
+AUTO_DEPLOY_WEBHOOK_SECRET=<GitHub Token có quyền gọi dispatch API của repo này>
 AUTO_DEPLOY_GITHUB_EVENT_TYPE=rebuild-search-index
 ```
 
-其中：
+Trong đó:
 
-- `AUTO_DEPLOY_WEBHOOK_URL` 指向你自己的仓库，不是原仓库
-- `AUTO_DEPLOY_WEBHOOK_SECRET` 建议使用：
-  - 经典 PAT：带 `repo` scope
-  - 或细粒度 PAT：至少对该仓库有 `Contents: write`
+- `AUTO_DEPLOY_WEBHOOK_URL` trỏ đến repo của bạn, không phải repo gốc
+- `AUTO_DEPLOY_WEBHOOK_SECRET` khuyến nghị dùng:
+  - PAT cổ điển: có scope `repo`
+  - Hoặc PAT chi tiết: có ít nhất `Contents: write` đối với repo đó
 
-#### 2. GitHub 仓库 Secrets
+#### 2. GitHub repo Secrets
 
-工作流支持两种 Cloudflare 凭据方案：
+Workflow hỗ trợ hai phương án Cloudflare credentials:
 
-**方案 A：推荐，最稳**
+**Phương án A: Khuyến nghị, ổn định nhất**
 
 - `CLOUDFLARE_API_TOKEN`
 
-**方案 B：备选**
+**Phương án B: Phương án dự phòng**
 
 - `CLOUDFLARE_REFRESH_TOKEN`
-- 如果你想让工作流自动回写新的 refresh token，还要再加：`GH_ADMIN_TOKEN`
+- Nếu muốn workflow tự động ghi lại refresh token mới, thêm: `GH_ADMIN_TOKEN`
 
-### 这条工作流会做什么
+### Workflow này sẽ làm gì
 
-`.github/workflows/auto-deploy-from-admin.yml` 会：
+`.github/workflows/auto-deploy-from-admin.yml` sẽ:
 
-1. 接收 `repository_dispatch`
-2. 安装依赖
-3. 准备 Cloudflare Token
-4. 执行 `npm run deploy`
+1. Nhận `repository_dispatch`
+2. Cài đặt dependencies
+3. Chuẩn bị Cloudflare Token
+4. Thực thi `npm run deploy`
 
-而 `npm run deploy` 会做：
+Còn `npm run deploy` sẽ làm:
 
-```text
+```
 npm run db:migrate:remote
 npm run search:index:remote
 astro build
 wrangler deploy
 ```
 
-也就是说，它会直接用**远端 D1** 重建索引，再部署一次。
+Nghĩa là, sẽ dùng **D1 remote** để rebuild chỉ mục, rồi deploy lại.
 
-### 推荐测试方法
+### Phương pháp test khuyến nghị
 
-1. 先把整站正常上线
-2. 配好上面的 webhook 和 GitHub Secrets
-3. 登录后台
-4. 发布一篇新文章
-5. 去 GitHub Actions 看 `后台发布自动部署` 有没有触发
-6. 等 Actions 完成后，再去站内搜索里搜新文章标题
+1. Deploy toàn bộ site bình thường trước
+2. Cấu hình webhook và GitHub Secrets như trên
+3. Đăng nhập trang quản trị
+4. Publish một bài viết mới
+5. Vào GitHub Actions xem `后台发布自动部署` có được trigger không
+6. Đợi Actions hoàn thành, sau đó vào trang tìm kiếm tìm tiêu đề bài viết mới
 
-如果搜到了，说明整条链路已经打通。
+Nếu tìm được, nghĩa là toàn bộ luồng đã thông.
 
-## Giscus 评论区配置
+## Cấu hình bình luận Giscus
 
-这个项目的评论区是 **Giscus**，也就是 GitHub Discussions 评论。
+Phần bình luận trong project này là **Giscus**, tức GitHub Discussions bình luận.
 
-### 你需要准备什么
+### Bạn cần chuẩn bị gì
 
-1. 你自己的 GitHub 仓库
-2. 给这个仓库开启 `Discussions`
-3. 在 Discussions 里选一个分类给评论用
-4. 去 `https://giscus.app/zh-CN` 生成配置
+1. Repo GitHub của riêng bạn
+2. Bật `Discussions` trong repo này
+3. Chọn một category trong Discussions cho bình luận
+4. Vào `https://giscus.app/zh-CN` để tạo cấu hình
 
-### 配置步骤
+### Các bước cấu hình
 
-#### 1. 开启 GitHub Discussions
+#### 1. Bật GitHub Discussions
 
-在你的 GitHub 仓库里打开 Discussions。
+Bật Discussions trong repo GitHub của bạn.
 
-#### 2. 准备一个分类
+#### 2. Chuẩn bị một category
 
-最常见就是直接用 `Announcements`，也可以自己建别的。
+Thường dùng trực tiếp `Announcements`, cũng có thể tự tạo category khác.
 
-#### 3. 去 giscus.app 获取参数
+#### 3. Vào giscus.app lấy tham số
 
-Giscus 页面会帮你拿到这些值：
+Trang Giscus sẽ giúp bạn lấy các giá trị sau:
 
 - `repo`
 - `repoId`
 - `category`
 - `categoryId`
 
-#### 4. 回填到 `src/lib/types.ts`
+#### 4. Điền vào `src/lib/types.ts`
 
-示例结构如下：
+Cấu trúc ví dụ như sau:
 
 ```ts
 comments: {
   provider: "giscus",
-  repo: "你的用户名/你的仓库",
-  repoId: "你的 repoId",
+  repo: "TÊN-USER/TÊN-REPO",
+  repoId: "repoId-của-bạn",
   category: "Announcements",
-  categoryId: "你的 categoryId",
+  categoryId: "categoryId-của-bạn",
   mapping: "pathname",
   strict: false,
   reactionsEnabled: true,
@@ -745,39 +745,39 @@ comments: {
 }
 ```
 
-### 这个项目的评论区有什么特点
+### Đặc điểm bình luận trong project này
 
-- 默认折叠，用户点开后才会加载 Giscus
-- 会跟随深浅色主题自动切换
-- 如果仓库没配好 Discussions，会在页面上显示提示，而不是直接白屏
+- Mặc định ẩn, user click mới load Giscus
+- Tự động chuyển theo theme sáng/tối
+- Nếu repo chưa cấu hình Discussions, sẽ hiển thị gợi ý trên trang, không phải trắng toàn màn hình
 
-### 如果你暂时不想启用评论区
+### Nếu tạm thời không muốn bật bình luận
 
-最简单的做法有两个：
+Có hai cách đơn giản nhất:
 
-1. 把 `src/lib/types.ts` 里的评论配置改成你自己的真实值后再启用
-2. 或者先清空评论关键字段，让组件进入“未配置”状态
+1. Sửa cấu hình bình luận trong `src/lib/types.ts` thành thông tin thật của bạn rồi bật
+2. Hoặc xóa trắng các trường quan trọng của bình luận, để component vào trạng thái "chưa cấu hình"
 
-总之不要继续指向原仓库，不然评论会跑到错误的 Discussions 里。
+Tóm lại, không nên tiếp tục trỏ đến repo gốc, nếu không bình luận sẽ chạy đến Discussions sai.
 
-## 可选功能配置清单
+## Danh sách cấu hình tính năng tùy chọn
 
-| 功能 | 是否必须 | 配置位置 | 说明 |
+| Tính năng | Bắt buộc | Vị trí cấu hình | Mô tả |
 | --- | --- | --- | --- |
-| Turnstile | 否 | `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` | 登录页、友链申请的人机验证 |
-| Giscus 评论区 | 否 | `src/lib/types.ts` | GitHub Discussions 评论 |
-| 媒体管理 | 强烈推荐 | `MEDIA_BUCKET` | 后台上传图片 |
-| 后台自动重建 | 否，但很推荐 | `AUTO_DEPLOY_*` + GitHub Actions Secrets | 后台发文后自动更新搜索 |
-| MCP 发帖接口 | 否 | `MCP_BEARER_TOKEN` 等 | 给外部 AI / 自动化工具发帖 |
-| 公开 AI 功能 | 否 | `AI_PUBLIC_API_KEY` 等 | 前台公开 AI 能力 |
-| 后台 AI 功能 | 否 | `AI_INTERNAL_API_KEY` 等 | 后台 AI 能力 |
+| Turnstile | Không | `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` | Xác minh con người cho trang đăng nhập, form liên kết bạn bè |
+| Giscus bình luận | Không | `src/lib/types.ts` | GitHub Discussions bình luận |
+| Quản lý media | Khuyến nghị mạnh | `MEDIA_BUCKET` | Upload ảnh từ trang quản trị |
+| Auto rebuild quản trị | Không, nhưng khuyến nghị | `AUTO_DEPLOY_*` + GitHub Actions Secrets | Auto cập nhật tìm kiếm sau khi đăng bài |
+| MCP đăng bài | Không | `MCP_BEARER_TOKEN` v.v | Giao diện đăng bài cho AI bên ngoài / công cụ tự động |
+| AI công khai | Không | `AI_PUBLIC_API_KEY` v.v | Tính năng AI công khai trên trang chính |
+| AI quản trị | Không | `AI_INTERNAL_API_KEY` v.v | Tính năng AI trong trang quản trị |
 
-## 本地开发
+## Phát triển cục bộ
 
-推荐使用 `Node.js 22+` 和 `npm`。
+Khuyến nghị sử dụng `Node.js 22+` và `npm`.
 
 ```bash
-git clone https://github.com/你的用户名/cf-astro-blog.git
+git clone https://github.com/TÊN-USER/cf-astro-blog.git
 cd cf-astro-blog
 npm install
 cp .dev.vars.example .dev.vars
@@ -785,70 +785,70 @@ npm run db:migrate:local
 npm run dev
 ```
 
-如需生成后台密码哈希，可执行：
+Nếu cần tạo hash mật khẩu quản trị, thực thi:
 
 ```bash
-npm run hash:password -- 你的密码
+npm run hash:password -- MẬT-KHẨU-CỦA-BẠN
 ```
 
-> 说明：当前后台主流程已经是 GitHub OAuth 登录。
+> Giải thích: Luồng chính hiện tại của trang quản trị là đăng nhập qua GitHub OAuth.
 >
-> `ADMIN_PASSWORD_HASH` 主要是为了兼容旧配置或保留脚本能力，不再是推荐的登录方式。
+> `ADMIN_PASSWORD_HASH` chủ yếu để tương thích cấu hình cũ hoặc giữ khả năng script, không còn là phương thức đăng nhập khuyến nghị.
 
-## 常用命令
+## Các lệnh thường dùng
 
-| 命令 | 说明 |
+| Lệnh | Mô tả |
 | --- | --- |
-| `npm run dev` | 启动本地开发服务器 |
-| `npm run build` | 生成生产构建（会先生成 Pagefind 索引） |
-| `npm run preview` | 构建后用 Wrangler 本地预览 |
-| `npm run deploy` | 远端迁移 + 远端索引 + 构建 + deploy |
-| `npm run check` | 运行类型检查和 Biome 检查 |
-| `npm run lint` | 运行 Biome lint |
-| `npm run format` | 格式化源码、脚本、测试与 README |
-| `npm test` | 运行自动化测试 |
-| `npm run db:migrate:local` | 应用本地 D1 迁移 |
-| `npm run db:migrate:remote` | 应用线上 D1 迁移 |
-| `npm run db:seed:local` | 为本地 D1 导入示例数据 |
-| `npm run db:seed:remote` | 为远端 D1 导入示例数据（谨慎使用） |
-| `npm run search:index:auto` | 自动选择本地 / 远端 D1 生成搜索索引 |
-| `npm run search:index:local` | 强制读取本地 D1 生成搜索索引 |
-| `npm run search:index:remote` | 强制读取远端 D1 生成搜索索引 |
+| `npm run dev` | Khởi động dev server cục bộ |
+| `npm run build` | Tạo bản production (sẽ tạo chỉ mục Pagefind trước) |
+| `npm run preview` | Preview sau build bằng Wrangler cục bộ |
+| `npm run deploy` | Migration remote + chỉ mục remote + build + deploy |
+| `npm run check` | Chạy type check và Biome check |
+| `npm run lint` | Chạy Biome lint |
+| `npm run format` | Format code, script, test và README |
+| `npm test` | Chạy automated test |
+| `npm run db:migrate:local` | Áp dụng D1 migration cục bộ |
+| `npm run db:migrate:remote` | Áp dụng D1 migration online |
+| `npm run db:seed:local` | Import dữ liệu mẫu vào D1 cục bộ |
+| `npm run db:seed:remote` | Import dữ liệu mẫu vào D1 remote (cẩn thận) |
+| `npm run search:index:auto` | Tự động chọn D1 cục bộ / remote để tạo chỉ mục tìm kiếm |
+| `npm run search:index:local` | Cưỡng ép đọc D1 cục bộ để tạo chỉ mục |
+| `npm run search:index:remote` | Cưỡng ép đọc D1 remote để tạo chỉ mục |
 
-## SEO 与订阅
+## SEO và Đăng ký
 
-- `sitemap.xml`：由 `src/pages/sitemap.xml.ts` 动态输出，包含公开页面和可见文章。
-- `rss.xml`：由 `src/pages/rss.xml.ts` 动态输出，默认收录最近 30 篇公开文章。
-- `robots.txt`：由 `src/pages/robots.txt.ts` 输出，允许公开页面抓取，屏蔽后台登录与管理相关路径（`/api/auth`、`/api/admin`、`/admin`）。
-- `webmention`：由 `src/admin/routes/webmention.ts` 提供接收端点 `/api/webmention`，通过 `source/target` 校验后写入待审核队列；后台在 `/api/admin/mentions` 进行审核。
+- `sitemap.xml`: Xuất động bởi `src/pages/sitemap.xml.ts`, bao gồm trang công khai và bài viết visible.
+- `rss.xml`: Xuất động bởi `src/pages/rss.xml.ts`, mặc định bao gồm 30 bài viết public gần nhất.
+- `robots.txt`: Xuất bởi `src/pages/robots.txt.ts`, cho phép crawl trang công khai, chặn trang đăng nhập và quản trị liên quan (`/api/auth`, `/api/admin`, `/admin`).
+- `webmention`: Endpoint nhận `/api/webmention` được cung cấp bởi `src/admin/routes/webmention.ts`, sau khi xác minh `source/target` sẽ ghi vào hàng đợi duyệt; trang quản trị duyệt tại `/api/admin/mentions`.
 
-## 部署前检查
+## Kiểm tra trước khi deploy
 
-上线前至少确认下面这些：
+Trước khi lên production, ít nhất xác nhận những điều sau:
 
-1. `wrangler.jsonc` 已替换成你自己的资源和域名。
-2. `src/lib/types.ts` 已改成你自己的站点信息。
-3. `JWT_SECRET`、`ADMIN_GITHUB_LOGIN`、`GITHUB_OAUTH_CLIENT_ID`、`GITHUB_OAUTH_CLIENT_SECRET` 已配置。
-4. 如果启用了 Turnstile，`TURNSTILE_SITE_KEY` 和 `TURNSTILE_SECRET_KEY` 都已配置。
-5. 如果要启用媒体库，`MEDIA_BUCKET` 已绑定。
-6. 如果要启用评论区，Giscus 的 `repoId` 和 `categoryId` 已替换。
-7. 已执行一次 `npm run db:migrate:remote`。
-8. 上线前已经跑过 `npm run check` 和 `npm test`。
+1. `wrangler.jsonc` đã được thay thế thành tài nguyên và domain của bạn.
+2. `src/lib/types.ts` đã được sửa thành thông tin site của bạn.
+3. `JWT_SECRET`, `ADMIN_GITHUB_LOGIN`, `GITHUB_OAUTH_CLIENT_ID`, `GITHUB_OAUTH_CLIENT_SECRET` đã được cấu hình.
+4. Nếu bật Turnstile, cả `TURNSTILE_SITE_KEY` và `TURNSTILE_SECRET_KEY` đều đã cấu hình.
+5. Nếu muốn bật thư viện media, `MEDIA_BUCKET` đã bind.
+6. Nếu muốn bật bình luận, `repoId` và `categoryId` của Giscus đã được thay.
+7. Đã thực hiện `npm run db:migrate:remote` lần đầu.
+8. Trước khi lên production đã chạy `npm run check` và `npm test`.
 
-## 上线后维护速查
+## Hướng dẫn bảo trì sau khi lên production
 
-- 只改 UI / 文案 / 交互 / 接口逻辑（不改 D1 表结构）时：**直接 `push` 即可**，Cloudflare 会自动构建部署。
-- 改了数据库结构（新增表 / 字段 / 索引）时：**部署后必须再执行 `npm run db:migrate:remote`**。
-- 后台发布文章后如果发现搜索没更新：优先检查 GitHub Actions 自动部署链路是否配置完成。
-- 完整维护流程和故障排查请看：[docs/maintenance-guide.md](docs/maintenance-guide.md)。
+- Chỉ sửa UI / văn bản / tương tác / logic API (không thay đổi cấu trúc bảng D1): **chỉ cần `push`**, Cloudflare sẽ auto build deploy.
+- Thay đổi cấu trúc database (thêm bảng / trường / index): **Sau khi deploy phải thực hiện `npm run db:migrate:remote`**.
+- Sau khi đăng bài từ quản trị mà thấy tìm kiếm không cập nhật: Ưu tiên kiểm tra luồng auto deploy GitHub Actions có được cấu hình hoàn chỉnh không.
+- Quy trình bảo trì đầy đủ và xử lý lỗi xem: [docs/maintenance-guide.md](docs/maintenance-guide.md).
 
-## 常见问题
+## Câu hỏi thường gặp
 
-### 1. 站点上线了，但标题、Logo、评论区还是原作者的
+### 1. Site đã lên production, nhưng tiêu đề, Logo, bình luận vẫn là của tác giả gốc
 
-说明你只把仓库跑起来了，还没做品牌替换。
+Nghĩa là bạn chỉ chạy được repo, nhưng chưa thay thế thương hiệu.
 
-优先检查：
+Ưu tiên kiểm tra:
 
 - `src/lib/types.ts`
 - `src/components/BaseHead.astro`
@@ -856,51 +856,51 @@ npm run hash:password -- 你的密码
 - `src/admin/views/login.ts`
 - `src/components/Footer.astro`
 
-### 2. 后台登录页显示 GitHub OAuth 未配置
+### 2. Trang đăng nhập quản trị hiển thị "GitHub OAuth chưa được cấu hình"
 
-优先检查：
+Ưu tiên kiểm tra:
 
 - `ADMIN_GITHUB_LOGIN`
 - `GITHUB_OAUTH_CLIENT_ID`
 - `GITHUB_OAUTH_CLIENT_SECRET`
-- `GITHUB_OAUTH_REDIRECT_URI`（如果你手动设置了的话）
+- `GITHUB_OAUTH_REDIRECT_URI` (nếu bạn đặt thủ công)
 
-### 3. 新文章已经发布了，但搜索搜不到
+### 3. Bài viết mới đã publish, nhưng tìm kiếm không thấy
 
-这通常不是文章没发出去，而是 **Pagefind 还没重建**。
+Đây thường không phải do bài viết chưa publish, mà là **Pagefind chưa được rebuild**.
 
-排查顺序：
+Thứ tự kiểm tra:
 
-1. 后台文章状态是不是 `published`
-2. GitHub Actions 自动部署有没有触发
-3. 如果没配自动部署，那就手动重新构建 / 部署一次
+1. Trạng thái bài viết trong quản trị có phải `published` không
+2. GitHub Actions auto deploy có được trigger không
+3. Nếu không cấu hình auto deploy, thì rebuild / deploy thủ công một lần
 
-### 4. 数据库报错、页面 500、后台某些列表空白
+### 4. Database báo lỗi, trang 500, một số danh sách trong quản trị trống
 
-很大概率是 D1 还没迁移。
+Có thể là do D1 chưa migrate.
 
-执行：
+Thực thi:
 
 ```bash
 npm run db:migrate:remote
 ```
 
-### 5. 图片域名换了，但前台 / 后台不显示
+### 5. Đổi domain ảnh, nhưng trang chính / quản trị không hiển thị
 
-检查是不是只换了图片地址，没改 CSP 白名单：
+Kiểm tra xem có phải chỉ đổi địa chỉ ảnh mà chưa sửa CSP whitelist không:
 
 - `src/middleware.ts`
 - `src/admin/app.ts`
 
-### 6. Giscus 评论区打不开或加载的是别人的 Discussions
+### 6. Bình luận Giscus không mở được hoặc load Discussions của người khác
 
-优先检查 `src/lib/types.ts` 里的：
+Ưu tiên kiểm tra `src/lib/types.ts`:
 
 - `comments.repo`
 - `comments.repoId`
 - `comments.category`
 - `comments.categoryId`
 
-## 许可证
+## Giấy phép
 
-项目使用 [MIT](LICENSE) 许可证。
+Project sử dụng [MIT](LICENSE).
